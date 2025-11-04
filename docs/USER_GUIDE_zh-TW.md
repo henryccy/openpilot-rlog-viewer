@@ -79,12 +79,15 @@
 
    從 Windows 命令提示字元或 PowerShell：
    ```bash
-   # 複製整個 segment 資料夾
+   # 複製整個 segment 目錄（重要：必須複製整個資料夾）
+   # segment 目錄包含：
+   #   - rlog 或 rlog.bz2（記錄檔）
+   #   - fcamera.hevc、ecamera.hevc、dcamera.hevc（影片檔案）
+   #   - 其他相關檔案
    scp -r comma@192.168.1.100:/data/media/0/realdata/2024-01-01--12-00-00 C:\logs\
-
-   # 或複製特定檔案
-   scp comma@192.168.1.100:/data/media/0/realdata/2024-01-01--12-00-00/0/rlog C:\logs\
    ```
+
+   **重要**：務必複製整個 segment 目錄，不是只複製單一檔案。segment 結構包含分析所需的記錄檔和影片檔案。
 
 ### 方法 2：FTP 客戶端（初學者較容易）
 
@@ -152,6 +155,23 @@ bzip2 -d rlog.bz2
 5. 完成後，segment 會出現在主視窗中
 
 **匯入時間**：取決於記錄檔大小，通常 1 分鐘的 segment 需要 1-5 分鐘。
+
+### 重要：匯入後的檔案管理
+
+匯入 segment 後，您需要了解哪些檔案可以刪除，哪些必須保留：
+
+- ✅ **影片檔案**（fcamera.hevc、ecamera.hevc、dcamera.hevc）：
+  - **必須保留在原位置**
+  - 資料庫儲存了影片檔案的路徑
+  - 如果移動或刪除這些檔案，影片播放將無法運作
+  - 資料圖表和訊號分析仍可正常使用
+
+- ✅ **rlog 檔案**（rlog 或 rlog.bz2）：
+  - **匯入後可以刪除**以節省磁碟空間
+  - 所有訊號資料已匯入資料庫
+  - 僅在確定不需要重新匯入時刪除
+
+⚠️ **最佳做法**：將影片檔案保留在匯入時的相同位置。如果需要重新整理檔案，請考慮移動後重新匯入 segment。
 
 ---
 
@@ -332,6 +352,80 @@ print(df['steeringAngleDeg'].max())
 | **Ctrl+W** | 關閉目前 segment |
 | **Ctrl+Q** | 結束應用程式 |
 | **F11** | 切換全螢幕 |
+
+---
+
+## 自定義訊號（訊號計算器）
+
+除了 cereal 和 CAN 訊號外，您還可以使用 Python 運算式定義自己的計算訊號。
+
+### 使用方法
+
+1. 點擊 `工具 → 訊號計算器` 或 `Tools → Signal Calculator`
+2. 建立新的自定義訊號：
+   - **訊號名稱**：例如 "speedKmh"、"accelG"、"followDistance"
+   - **運算式**：使用 Python 語法計算訊號值
+   - **單位**：選填，例如 "km/h"、"G"、"m"
+   - **描述**：選填，說明此訊號代表什麼
+
+3. 儲存訊號 - 它會出現在訊號選擇器中
+4. 您可以像一般訊號一樣繪製和分析自定義訊號
+
+### 運算式範例
+
+**速度轉換**（m/s 轉 km/h）：
+```python
+carState.vEgo * 3.6
+```
+
+**加速度 G 值**：
+```python
+carState.aEgo / 9.81
+```
+
+**前車相對距離差**：
+```python
+radarState.leadOne.dRel - radarState.leadTwo.dRel
+```
+
+**條件邏輯**（速度門檻指示器）：
+```python
+1 if carState.vEgo > 30 else 0
+```
+
+**複雜計算**（停車距離估算）：
+```python
+(carState.vEgo ** 2) / (2 * abs(carState.aEgo)) if carState.aEgo < 0 else 0
+```
+
+**多訊號運算**：
+```python
+(carState.vEgo * 3.6) - (radarState.leadOne.vRel * 3.6)
+```
+
+### 可用函式
+
+您可以使用 Python 的內建數學函式：
+- `abs()`、`max()`、`min()`
+- `round()`、`int()`、`float()`
+- 數學運算子：`+`、`-`、`*`、`/`、`**`（次方）、`%`（取餘）
+- 比較：`>`、`<`、`>=`、`<=`、`==`、`!=`
+- 邏輯：`and`、`or`、`not`
+- 條件：`x if condition else y`
+
+### 重要注意事項
+
+- 運算式必須是有效的 Python 語法
+- 您可以引用資料庫中任何已匯入的訊號
+- 自定義訊號儲存在資料庫中，可跨 segment 重複使用
+- 無效的運算式會顯示錯誤訊息
+- 訊號值會在每個時間戳記進行評估
+
+### 管理自定義訊號
+
+- **編輯**：點擊現有的自定義訊號以修改
+- **刪除**：移除不再需要的自定義訊號
+- **匯出/匯入**：自定義訊號儲存在 `oplog.db` 中 - 備份此檔案以保留您的自定義訊號
 
 ---
 

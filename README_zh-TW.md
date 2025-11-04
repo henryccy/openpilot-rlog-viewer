@@ -57,7 +57,9 @@ openpilot 官方提供了 **plotjuggler** 和 **cabana** 用於記錄檔分析�
    cd /data/media/0/realdata/
    ls -lt
 
-   # 從 Windows 端使用 SCP 複製
+   # 從 Windows 端使用 SCP 複製整個 segment 目錄
+   # 重要：必須複製整個 segment 資料夾，不是只複製單一檔案
+   # segment 包含 rlog + 影片檔案（fcamera.hevc、ecamera.hevc 等）
    scp -r comma@192.168.x.x:/data/media/0/realdata/2024-01-01--12-00-00 C:\logs\
    ```
 
@@ -88,6 +90,11 @@ openpilot 官方提供了 **plotjuggler** 和 **cabana** 用於記錄檔分析�
 6. **匯入與分析 Segment**
    - 使用 `工具 → 匯入 Segment` 載入你的 rlog 檔案
    - 開始分析，享受同步影片播放！
+
+   **重要：匯入後的檔案管理**：
+   - ✅ **影片檔案**：必須保留在原位置（資料庫記錄了影片檔案路徑）
+   - ✅ **rlog 檔案**：可以刪除以節省空間（資料已匯入資料庫）
+   - ⚠️ 如果移動或刪除影片檔案，將無法播放影片（但資料圖表仍可正常使用）
 
 ### 開發者
 
@@ -121,6 +128,7 @@ openpilot 官方提供了 **plotjuggler** 和 **cabana** 用於記錄檔分析�
 - **訊號瀏覽**：瀏覽 300+ cereal 訊號 + CAN 訊號
 - **即時搜尋**：模糊搜尋，支援中英文翻譯
 - **圖表視覺化**：使用 pyqtgraph 進行多訊號同步繪圖
+- **自定義訊號**：使用 Python 運算式建立計算訊號（例如：速度轉換、G 值）
 - **資料匯出**：匯出為 CSV/Parquet 供進一步分析
 
 ### 🎥 影片播放

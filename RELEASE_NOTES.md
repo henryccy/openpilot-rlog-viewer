@@ -29,7 +29,12 @@
    - Re-import when updating signal definition files or using logs from different versions
 
 3. **Get Logs from C3/C3X**
-   - Use SSH/SCP: `scp -r comma@192.168.x.x:/data/media/0/realdata/[segment] C:\logs\`
+   - ⚠️ **Important**: Must copy the entire segment directory (e.g., `2024-01-01--12-00-00/`), not individual files
+   - The segment directory contains:
+     - `rlog` or `rlog.bz2` (log file)
+     - `fcamera.hevc`, `ecamera.hevc`, `dcamera.hevc` (video files)
+     - Other related files
+   - Use SSH/SCP: `scp -r comma@192.168.x.x:/data/media/0/realdata/2024-01-01--12-00-00 C:\logs\`
    - Or use WinSCP/FileZilla with SSH key authentication
 
 4. **Import Segment**
@@ -38,6 +43,11 @@
    - Click "Start Import"
 
    ⚠️ **Note**: Only uncompressed `.rlog` files are supported. If you have `.bz2` compressed files, decompress them first: `bzip2 -d rlog.bz2`
+
+   **Important: File Management After Import**:
+   - ✅ **Video files**: Must remain in original location (database stores video file paths)
+   - ✅ **rlog files**: Can be deleted to save space (data is imported to database)
+   - ⚠️ If you move or delete video files, video playback will not work (but data charts remain functional)
 
 5. **Analyze!**
    - Search and select signals
@@ -96,6 +106,7 @@ Just edit and restart the exe!
 - ✅ Direct C3/C3X log access via SSH/FTP
 - ✅ Synchronized video playback (fcamera, ecamera, dcamera)
 - ✅ Multi-signal plotting (300+ cereal + CAN signals)
+- ✅ Custom signal calculator (create calculated signals with Python expressions)
 - ✅ SQLite database management
 - ✅ DBC file support
 - ✅ Multilingual UI (English / 繁體中文)

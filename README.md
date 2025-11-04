@@ -57,7 +57,9 @@ openpilot officially provides **plotjuggler** and **cabana** for log analysis, b
    cd /data/media/0/realdata/
    ls -lt
 
-   # Copy to Windows using SCP from Windows side
+   # Copy entire segment directory to Windows using SCP
+   # IMPORTANT: Must copy the entire segment folder, not just individual files
+   # The segment contains rlog + video files (fcamera.hevc, ecamera.hevc, etc.)
    scp -r comma@192.168.x.x:/data/media/0/realdata/2024-01-01--12-00-00 C:\logs\
    ```
 
@@ -88,6 +90,11 @@ openpilot officially provides **plotjuggler** and **cabana** for log analysis, b
 6. **Import and Analyze Segments**
    - Use `Tools → Import Segment` to load your rlog file
    - Analyze data with synchronized video playback!
+
+   **Important: File Management After Import**:
+   - ✅ **Video files**: Must remain in original location (database stores video file paths)
+   - ✅ **rlog files**: Can be deleted to save space (data is imported to database)
+   - ⚠️ If you move or delete video files, video playback will not work (but data charts remain functional)
 
 ### For Developers
 
@@ -121,6 +128,7 @@ openpilot officially provides **plotjuggler** and **cabana** for log analysis, b
 - **Signal Browsing**: Browse 300+ cereal signals + CAN signals
 - **Real-time Search**: Fuzzy search with English/Chinese translation
 - **Chart Visualization**: Multi-signal synchronized plotting with pyqtgraph
+- **Custom Signals**: Create calculated signals with Python expressions (e.g., speed conversion, G-force)
 - **Data Export**: Export to CSV/Parquet for further analysis
 
 ### 🎥 Video Playback

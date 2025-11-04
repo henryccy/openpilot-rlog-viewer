@@ -79,12 +79,15 @@ There are two main methods to transfer logs from your comma device to your Windo
 
    From Windows command prompt or PowerShell:
    ```bash
-   # Copy entire segment folder
+   # Copy entire segment directory (IMPORTANT: Must copy the whole folder)
+   # The segment directory contains:
+   #   - rlog or rlog.bz2 (log file)
+   #   - fcamera.hevc, ecamera.hevc, dcamera.hevc (video files)
+   #   - Other related files
    scp -r comma@192.168.1.100:/data/media/0/realdata/2024-01-01--12-00-00 C:\logs\
-
-   # Or copy specific files
-   scp comma@192.168.1.100:/data/media/0/realdata/2024-01-01--12-00-00/0/rlog C:\logs\
    ```
+
+   **Important**: Always copy the entire segment directory, not individual files. The segment structure includes both log and video files needed for complete analysis.
 
 ### Method 2: FTP Client (Easier for Beginners)
 
@@ -152,6 +155,23 @@ bzip2 -d rlog.bz2
 5. When complete, the segment appears in the main window
 
 **Import Time**: Depends on log size, typically 1-5 minutes for a 1-minute segment.
+
+### Important: File Management After Import
+
+After importing a segment, you need to understand which files can be deleted and which must be kept:
+
+- ✅ **Video files** (fcamera.hevc, ecamera.hevc, dcamera.hevc):
+  - **Must remain in original location**
+  - The database stores the video file paths
+  - If you move or delete these files, video playback will not work
+  - Data charts and signal analysis will still function normally
+
+- ✅ **rlog files** (rlog or rlog.bz2):
+  - **Can be deleted after import** to save disk space
+  - All signal data has been imported into the database
+  - Only delete if you're certain you won't need to re-import
+
+⚠️ **Best Practice**: Keep video files in the same location you imported from. If you need to reorganize files, consider re-importing the segment after moving.
 
 ---
 
@@ -332,6 +352,80 @@ print(df['steeringAngleDeg'].max())
 | **Ctrl+W** | Close current segment |
 | **Ctrl+Q** | Quit application |
 | **F11** | Toggle fullscreen |
+
+---
+
+## Custom Signals (Signal Calculator)
+
+In addition to cereal and CAN signals, you can define your own calculated signals using Python expressions.
+
+### How to Use
+
+1. Click `Tools → Signal Calculator`
+2. Create a new custom signal:
+   - **Signal Name**: e.g., "speedKmh", "accelG", "followDistance"
+   - **Expression**: Use Python syntax to calculate the signal value
+   - **Unit**: Optional, e.g., "km/h", "G", "m"
+   - **Description**: Optional, explain what this signal represents
+
+3. Save the signal - it will appear in the signal selector
+4. You can plot and analyze custom signals just like regular signals
+
+### Expression Examples
+
+**Speed Conversion** (m/s to km/h):
+```python
+carState.vEgo * 3.6
+```
+
+**Acceleration in G-force**:
+```python
+carState.aEgo / 9.81
+```
+
+**Relative Distance Between Lead Vehicles**:
+```python
+radarState.leadOne.dRel - radarState.leadTwo.dRel
+```
+
+**Conditional Logic** (Speed threshold indicator):
+```python
+1 if carState.vEgo > 30 else 0
+```
+
+**Complex Calculations** (Stopping distance estimate):
+```python
+(carState.vEgo ** 2) / (2 * abs(carState.aEgo)) if carState.aEgo < 0 else 0
+```
+
+**Multiple Signal Operations**:
+```python
+(carState.vEgo * 3.6) - (radarState.leadOne.vRel * 3.6)
+```
+
+### Available Functions
+
+You can use Python's built-in math functions:
+- `abs()`, `max()`, `min()`
+- `round()`, `int()`, `float()`
+- Mathematical operators: `+`, `-`, `*`, `/`, `**` (power), `%` (modulo)
+- Comparison: `>`, `<`, `>=`, `<=`, `==`, `!=`
+- Logical: `and`, `or`, `not`
+- Conditional: `x if condition else y`
+
+### Important Notes
+
+- Expressions must be valid Python syntax
+- You can reference any imported signal from the database
+- Custom signals are stored in the database and can be reused across segments
+- Invalid expressions will show an error message
+- Signal values are evaluated at each timestamp
+
+### Managing Custom Signals
+
+- **Edit**: Click on an existing custom signal to modify it
+- **Delete**: Remove custom signals you no longer need
+- **Export/Import**: Custom signals are stored in `oplog.db` - backup this file to preserve your custom signals
 
 ---
 
