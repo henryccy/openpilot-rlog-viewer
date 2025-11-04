@@ -1,6 +1,7 @@
 # Release Notes - v1.0.0
 
-**Compatibility**: Works with openpilot 0.9.7+ and any fork (FrogPilot, comma, custom builds, etc.)
+**Compatibility**: Tested with openpilot 0.9.7 and forks (FrogPilot, comma, custom builds, etc.)
+**Note**: openpilot 0.10+ untested - rlog format may have changed
 **Included log.capnp**: From FrogPilot (but you can use any version)
 
 ## Quick Start for End Users

@@ -4,7 +4,8 @@
 
 一個原生的 Windows 應用程式，用於在本地查看和分析 openpilot 記錄檔，無需 Linux 環境，也不需要上傳到 connect.comma.ai。
 
-**相容性**：適用於 openpilot 0.9.7+ 及任何分支版本（FrogPilot、comma 官方版、客製化版本等）
+**相容性**：已測試 openpilot 0.9.7 及分支版本（FrogPilot、comma 官方版、客製化版本等）
+**注意**：openpilot 0.10+ 未測試 - rlog 格式可能已更改
 **內建 log.capnp**：來自 FrogPilot（但您可以使用任何版本）
 
 ## 為什麼要用這個工具？
@@ -223,7 +224,7 @@ openpilot-log-viewer-release/
 確保所有 5 個 capnp 檔案（`log.capnp`、`car.capnp`、`legacy.capnp`、`custom.capnp`、`maptile.capnp`）都在同一目錄中。匯入時只需選擇 `log.capnp`，其他 4 個檔案會自動從相同位置載入。
 
 ### Q：這個工具相容哪個 openpilot 版本？
-**A**：本檢視器適用於 openpilot 0.9.7+ 及任何分支版本（FrogPilot、comma 官方版、客製化版本）。您可以匯入任何版本的 log.capnp 檔案。內建範例來自 FrogPilot，但您可以自由使用自己的版本。
+**A**：本檢視器已測試過 openpilot 0.9.7 及分支版本（FrogPilot、comma 官方版、客製化版本）。openpilot 0.10+ 尚未測試，因為 rlog 格式可能已更改。您可以匯入任何版本的 log.capnp 檔案。內建範例來自 FrogPilot，但您可以自由使用自己的版本。
 
 ### Q：如何設定 C3/C3X SSH 存取？
 **A**：現代 comma 設備需要 SSH 金鑰認證。請搜尋「comma 3 SSH key 設定」或「comma 3X SSH 存取 GitHub key」以獲取詳細指南。

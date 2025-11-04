@@ -4,7 +4,8 @@
 
 A native Windows application for viewing and analyzing openpilot logs locally, without the need for Linux environment or uploading to connect.comma.ai.
 
-**Compatibility**: Works with openpilot 0.9.7+ and any fork (FrogPilot, comma, custom builds, etc.)
+**Compatibility**: Tested with openpilot 0.9.7 and forks (FrogPilot, comma, custom builds, etc.)
+**Note**: openpilot 0.10+ untested - rlog format may have changed
 **Included log.capnp**: From FrogPilot (but you can use any version)
 
 ## Why This Tool?
@@ -223,7 +224,7 @@ Note: `.bz2` compressed files are not supported. Please decompress them first us
 Make sure all 5 capnp files (`log.capnp`, `car.capnp`, `legacy.capnp`, `custom.capnp`, `maptile.capnp`) are in the same directory. You only need to select `log.capnp` when importing - the other 4 files will be automatically loaded from the same location.
 
 ### Q: Which openpilot version is compatible?
-**A**: This viewer works with openpilot 0.9.7+ and any fork (FrogPilot, comma official, custom builds). You can import any version's log.capnp file. The included sample is from FrogPilot, but you're free to use your own.
+**A**: This viewer has been tested with openpilot 0.9.7 and forks (FrogPilot, comma official, custom builds). openpilot 0.10+ is untested as the rlog format may have changed. You can import any version's log.capnp file. The included sample is from FrogPilot, but you're free to use your own.
 
 ### Q: How do I setup SSH access to C3/C3X?
 **A**: Modern comma devices require SSH key authentication. Search for "comma 3 SSH key setup" or "comma 3X SSH access GitHub key" for detailed guides.
