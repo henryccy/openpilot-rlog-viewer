@@ -1,0 +1,139 @@
+{
+  "_README": "CAN 訊號中文翻譯檔（德文汽車術語）",
+  "_說明": "格式: 訊號名稱: {name_cn: 中文名稱, description_cn: 中文描述, unit_cn: 中文單位, category: 分類}",
+  "_NOTE": "此檔案會被 apply_translations.py 讀取並更新到資料庫和 Python 字典",
+
+  "Lenkung": {
+    "name_cn": "方向盤",
+    "description_cn": "轉向系統",
+    "category": "轉向系統"
+  },
+  "Lenkwinkel": {
+    "name_cn": "方向盤角度",
+    "description_cn": "方向盤轉動角度",
+    "unit": "deg",
+    "unit_cn": "度",
+    "category": "轉向系統"
+  },
+  "Lenkmoment": {
+    "name_cn": "方向盤扭矩",
+    "description_cn": "方向盤扭矩",
+    "unit": "Nm",
+    "unit_cn": "牛頓·公尺",
+    "category": "轉向系統"
+  },
+  "Geschwindigkeit": {
+    "name_cn": "速度",
+    "description_cn": "車輛速度",
+    "unit": "km/h",
+    "unit_cn": "公里/小時",
+    "category": "速度"
+  },
+  "Motor": {
+    "name_cn": "引擎",
+    "description_cn": "引擎/馬達",
+    "category": "動力系統"
+  },
+  "Drehzahl": {
+    "name_cn": "轉速",
+    "description_cn": "引擎或馬達轉速",
+    "unit": "rpm",
+    "unit_cn": "轉/分",
+    "category": "動力系統"
+  },
+  "Bremse": {
+    "name_cn": "煞車",
+    "description_cn": "煞車系統",
+    "category": "煞車系統"
+  },
+  "Bremsdruck": {
+    "name_cn": "煞車壓力",
+    "description_cn": "煞車系統壓力",
+    "unit": "bar",
+    "unit_cn": "巴",
+    "category": "煞車系統"
+  },
+  "Getriebe": {
+    "name_cn": "變速箱",
+    "description_cn": "變速箱系統",
+    "category": "動力系統"
+  },
+  "Gang": {
+    "name_cn": "檔位",
+    "description_cn": "當前檔位",
+    "category": "動力系統"
+  },
+  "Kupplung": {
+    "name_cn": "離合器",
+    "description_cn": "離合器系統",
+    "category": "動力系統"
+  },
+  "Gas": {
+    "name_cn": "油門",
+    "description_cn": "油門踏板",
+    "category": "動力系統"
+  },
+  "Fahrpedal": {
+    "name_cn": "油門踏板",
+    "description_cn": "加速踏板",
+    "category": "動力系統"
+  },
+  "Temperatur": {
+    "name_cn": "溫度",
+    "description_cn": "溫度",
+    "unit": "°C",
+    "unit_cn": "攝氏度",
+    "category": "感測器"
+  },
+  "Druck": {
+    "name_cn": "壓力",
+    "description_cn": "壓力",
+    "unit": "bar",
+    "unit_cn": "巴",
+    "category": "感測器"
+  },
+  "Spannung": {
+    "name_cn": "電壓",
+    "description_cn": "電壓",
+    "unit": "V",
+    "unit_cn": "伏特",
+    "category": "電氣系統"
+  },
+  "Strom": {
+    "name_cn": "電流",
+    "description_cn": "電流",
+    "unit": "A",
+    "unit_cn": "安培",
+    "category": "電氣系統"
+  },
+  "Anzeige": {
+    "name_cn": "顯示",
+    "description_cn": "儀表板顯示",
+    "category": "儀表系統"
+  },
+  "Diagnose": {
+    "name_cn": "診斷",
+    "description_cn": "診斷系統",
+    "category": "診斷系統"
+  },
+  "Fehler": {
+    "name_cn": "故障",
+    "description_cn": "錯誤或故障",
+    "category": "診斷系統"
+  },
+  "Status": {
+    "name_cn": "狀態",
+    "description_cn": "系統狀態",
+    "category": "其他"
+  },
+  "Anforderung": {
+    "name_cn": "請求",
+    "description_cn": "系統請求",
+    "category": "其他"
+  },
+  "Signal": {
+    "name_cn": "訊號",
+    "description_cn": "訊號",
+    "category": "其他"
+  }
+}
