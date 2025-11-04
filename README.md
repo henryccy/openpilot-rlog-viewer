@@ -73,10 +73,11 @@ openpilot officially provides **plotjuggler** and **cabana** for log analysis, b
 5. **First Time Setup: Import Signal Definitions**
    - Go to `Tools → Import Signal Definitions`
    - This imports cereal signals from `log.capnp` (FrogPilot definitions, openpilot 0.9.7 compatible) and CAN signals from DBC files
-   - **Required files** (must be in the same directory as the exe):
+   - **Required files**:
      - `log.capnp` (main schema file - from FrogPilot)
-     - `car.capnp`, `legacy.capnp`, `custom.capnp`, `maptile.capnp` (dependency files)
+     - `car.capnp`, `legacy.capnp`, `custom.capnp`, `maptile.capnp` (dependency files - must be in the same directory as log.capnp)
      - DBC files in `data/dbc/` folder
+   - When importing, you only need to select `log.capnp`. The other 4 dependency files will be automatically loaded from the same directory.
    - Click "Start Import" and wait for completion (~30-60 seconds)
 
    ⚠️ **When to Re-import**:
@@ -200,7 +201,9 @@ openpilot-log-viewer-release/
 **A**: Not entirely. This tool focuses on Windows users and local analysis. plotjuggler/cabana have their own strengths in the Linux ecosystem.
 
 ### Q: What log format is supported?
-**A**: Currently supports openpilot rlog format (`.rlog` or `.bz2` compressed). The log should contain cereal messages. Compatible with openpilot 0.9.7 and FrogPilot.
+**A**: Currently supports openpilot rlog format (uncompressed `.rlog` files only). The log should contain cereal messages. Compatible with openpilot 0.9.7 and FrogPilot.
+
+Note: `.bz2` compressed files are not supported. Please decompress them first using: `bzip2 -d rlog.bz2`
 
 ### Q: Do I need to re-import signal definitions?
 **A**: Yes, re-import when:
@@ -208,7 +211,7 @@ openpilot-log-viewer-release/
 - After updating signal definition files (log.capnp or DBC files)
 - When switching between different openpilot/FrogPilot versions
 
-Make sure all 5 capnp files (`log.capnp`, `car.capnp`, `legacy.capnp`, `custom.capnp`, `maptile.capnp`) are in the same directory.
+Make sure all 5 capnp files (`log.capnp`, `car.capnp`, `legacy.capnp`, `custom.capnp`, `maptile.capnp`) are in the same directory. You only need to select `log.capnp` when importing - the other 4 files will be automatically loaded from the same location.
 
 ### Q: Which openpilot version is this compatible with?
 **A**: This release uses signal definitions from FrogPilot (based on openpilot 0.9.7). It should work with most openpilot 0.9.x and FrogPilot logs.

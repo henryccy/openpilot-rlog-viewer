@@ -83,7 +83,7 @@
    scp -r comma@192.168.1.100:/data/media/0/realdata/2024-01-01--12-00-00 C:\logs\
 
    # 或複製特定檔案
-   scp comma@192.168.1.100:/data/media/0/realdata/2024-01-01--12-00-00/0/rlog.bz2 C:\logs\
+   scp comma@192.168.1.100:/data/media/0/realdata/2024-01-01--12-00-00/0/rlog C:\logs\
    ```
 
 ### 方法 2：FTP 客戶端（初學者較容易）
@@ -121,10 +121,12 @@
 3. 點擊 **開始匯入**
 4. 等待完成（通常 30-60 秒）
 
-**必要檔案**（必須與 exe 檔在同一目錄）：
+**必要檔案**：
 - `log.capnp`（主要 schema 檔案 - 來自 FrogPilot）
-- `car.capnp`、`legacy.capnp`、`custom.capnp`、`maptile.capnp`（依賴檔案）
+- `car.capnp`、`legacy.capnp`、`custom.capnp`、`maptile.capnp`（依賴檔案 - 必須與 log.capnp 在同一目錄）
 - `data/dbc/` 資料夾中的 DBC 檔案
+
+注意：匯入時只需選擇 `log.capnp`，其他 4 個依賴檔案會自動從相同目錄載入。
 
 ⚠️ **何時需要重新匯入**：
 - **首次**使用應用程式
@@ -138,9 +140,14 @@
 1. 點擊 **工具 → 匯入 Segment**
 2. 在匯入對話框中：
    - **Route 名稱**：選填，例如「高速公路測試駕駛」
-   - **rlog 路徑**：瀏覽到您的 rlog 檔案（例如 `C:\logs\2024-01-01--12-00-00\0\rlog.bz2`）
+   - **rlog 路徑**：瀏覽到您的 rlog 檔案（例如 `C:\logs\2024-01-01--12-00-00\0\rlog`）
    - **DBC 檔案**：選擇要用於 CAN 解析的 DBC 檔案（或保留預設）
 3. 點擊 **開始匯入**
+
+⚠️ **注意**：僅支援未壓縮的 `.rlog` 檔案。如果您有 `.bz2` 壓縮檔，請先解壓縮：
+```bash
+bzip2 -d rlog.bz2
+```
 4. 在記錄視窗中監控進度
 5. 完成後，segment 會出現在主視窗中
 
@@ -378,9 +385,10 @@ C:\openpilot-logs\
 
 如果匯入失敗：
 1. 檢查應用程式目錄中的 `oplog_viewer.log`
-2. 驗證 rlog 檔案沒有損壞：`bzip2 -t rlog.bz2`
-3. 確保 DBC 檔案有效
-4. 先嘗試匯入較小的 segment
+2. 驗證 rlog 檔案沒有損壞（必須是未壓縮的 `.rlog` 格式）
+3. 如果您有 `.bz2` 檔案，請先解壓縮：`bzip2 -d rlog.bz2`
+4. 確保 DBC 檔案有效
+5. 先嘗試匯入較小的 segment
 
 ### 7. 離線工作
 

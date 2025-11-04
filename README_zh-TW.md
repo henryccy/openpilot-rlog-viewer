@@ -73,10 +73,11 @@ openpilot 官方提供了 **plotjuggler** 和 **cabana** 用於記錄檔分析�
 5. **首次設定：匯入訊號定義**
    - 前往 `工具 → 匯入訊號定義`
    - 這會從 `log.capnp`（FrogPilot 定義檔，相容 openpilot 0.9.7）匯入 cereal 訊號，從 DBC 檔案匯入 CAN 訊號
-   - **必要檔案**（必須與 exe 檔在同一目錄）：
+   - **必要檔案**：
      - `log.capnp`（主要 schema 檔案 - 來自 FrogPilot）
-     - `car.capnp`、`legacy.capnp`、`custom.capnp`、`maptile.capnp`（依賴檔案）
+     - `car.capnp`、`legacy.capnp`、`custom.capnp`、`maptile.capnp`（依賴檔案 - 必須與 log.capnp 在同一目錄）
      - `data/dbc/` 資料夾中的 DBC 檔案
+   - 匯入時只需選擇 `log.capnp`，其他 4 個依賴檔案會自動從相同位置載入
    - 點擊「開始匯入」並等待完成（約 30-60 秒）
 
    ⚠️ **何時需要重新匯入**：
@@ -200,7 +201,9 @@ openpilot-log-viewer-release/
 **A**：不完全是。此工具專注於 Windows 使用者和本地分析。plotjuggler/cabana 在 Linux 生態系統中有其優勢。
 
 ### Q：支援什麼記錄檔格式？
-**A**：目前支援 openpilot rlog 格式（`.rlog` 或 `.bz2` 壓縮）。記錄檔應包含 cereal 訊息。相容 openpilot 0.9.7 和 FrogPilot。
+**A**：目前僅支援 openpilot rlog 格式（未壓縮的 `.rlog` 檔案）。記錄檔應包含 cereal 訊息。相容 openpilot 0.9.7 和 FrogPilot。
+
+注意：不支援 `.bz2` 壓縮檔。請先解壓縮：`bzip2 -d rlog.bz2`
 
 ### Q：我需要重新匯入訊號定義嗎？
 **A**：是的，以下情況需要重新匯入：
@@ -208,7 +211,7 @@ openpilot-log-viewer-release/
 - 更新訊號定義檔後（log.capnp 或 DBC 檔案）
 - 切換不同 openpilot/FrogPilot 版本時
 
-確保所有 5 個 capnp 檔案（`log.capnp`、`car.capnp`、`legacy.capnp`、`custom.capnp`、`maptile.capnp`）都在同一目錄中。
+確保所有 5 個 capnp 檔案（`log.capnp`、`car.capnp`、`legacy.capnp`、`custom.capnp`、`maptile.capnp`）都在同一目錄中。匯入時只需選擇 `log.capnp`，其他 4 個檔案會自動從相同位置載入。
 
 ### Q：這個工具相容哪個 openpilot 版本？
 **A**：本發行版使用 FrogPilot 的訊號定義（基於 openpilot 0.9.7）。應該可以處理大多數 openpilot 0.9.x 和 FrogPilot 的記錄檔。

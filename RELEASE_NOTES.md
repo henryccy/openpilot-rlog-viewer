@@ -19,10 +19,11 @@
 
 2. **Import Signal Definitions** (first time and after updates)
    - Go to `Tools → Import Signal Definitions`
-   - **Required files** (must be in same directory):
+   - **Required files**:
      - `log.capnp` (main schema - from FrogPilot, openpilot 0.9.7 compatible)
-     - `car.capnp`, `legacy.capnp`, `custom.capnp`, `maptile.capnp` (dependencies)
+     - `car.capnp`, `legacy.capnp`, `custom.capnp`, `maptile.capnp` (dependencies - must be in same directory as log.capnp)
      - DBC files in `data/dbc/`
+   - When importing, you only need to select `log.capnp`. The other 4 dependency files will be automatically loaded from the same directory.
    - Click "Start Import"
    - Wait for completion (~30-60 seconds)
    - Re-import when updating signal definition files or using logs from different versions
@@ -33,8 +34,10 @@
 
 4. **Import Segment**
    - Go to `Tools → Import Segment`
-   - Browse to your rlog file
+   - Browse to your rlog file (uncompressed `.rlog` only)
    - Click "Start Import"
+
+   ⚠️ **Note**: Only uncompressed `.rlog` files are supported. If you have `.bz2` compressed files, decompress them first: `bzip2 -d rlog.bz2`
 
 5. **Analyze!**
    - Search and select signals
@@ -137,7 +140,7 @@ Total size: ~316 MB
 
 ### Current Limitations
 - Windows only (Linux/Mac support planned for future)
-- rlog format only (other log formats not supported yet)
+- Uncompressed `.rlog` format only (`.bz2` compressed files not supported - decompress them first)
 - Single segment loading (no multi-segment comparison)
 - No custom signal calculations yet
 - Limited video codec support (HEVC only)

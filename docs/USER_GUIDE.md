@@ -83,7 +83,7 @@ There are two main methods to transfer logs from your comma device to your Windo
    scp -r comma@192.168.1.100:/data/media/0/realdata/2024-01-01--12-00-00 C:\logs\
 
    # Or copy specific files
-   scp comma@192.168.1.100:/data/media/0/realdata/2024-01-01--12-00-00/0/rlog.bz2 C:\logs\
+   scp comma@192.168.1.100:/data/media/0/realdata/2024-01-01--12-00-00/0/rlog C:\logs\
    ```
 
 ### Method 2: FTP Client (Easier for Beginners)
@@ -121,10 +121,12 @@ Before importing any logs, you need to import signal definitions:
 3. Click **Start Import**
 4. Wait for completion (typically 30-60 seconds)
 
-**Required Files** (must be in the same directory as the exe):
+**Required Files**:
 - `log.capnp` (main schema file - from FrogPilot)
-- `car.capnp`, `legacy.capnp`, `custom.capnp`, `maptile.capnp` (dependency files)
+- `car.capnp`, `legacy.capnp`, `custom.capnp`, `maptile.capnp` (dependency files - must be in the same directory as log.capnp)
 - DBC files in `data/dbc/` folder
+
+Note: When importing, you only need to select `log.capnp`. The other 4 dependency files will be automatically loaded from the same directory.
 
 ⚠️ **When to Re-import**:
 - **First time** using the application
@@ -138,9 +140,14 @@ Now you can import log data:
 1. Click **Tools → Import Segment**
 2. In the import dialog:
    - **Route Name**: Optional, e.g., "Highway Test Drive"
-   - **rlog Path**: Browse to your rlog file (e.g., `C:\logs\2024-01-01--12-00-00\0\rlog.bz2`)
+   - **rlog Path**: Browse to your rlog file (e.g., `C:\logs\2024-01-01--12-00-00\0\rlog`)
    - **DBC Files**: Select which DBC files to use for CAN parsing (or leave default)
 3. Click **Start Import**
+
+⚠️ **Note**: Only uncompressed `.rlog` files are supported. If you have `.bz2` compressed files, decompress them first:
+```bash
+bzip2 -d rlog.bz2
+```
 4. Monitor progress in the log window
 5. When complete, the segment appears in the main window
 
@@ -378,9 +385,10 @@ Restart the application to see changes.
 
 If import fails:
 1. Check `oplog_viewer.log` in the application directory
-2. Verify rlog file is not corrupted: `bzip2 -t rlog.bz2`
-3. Ensure DBC files are valid
-4. Try importing a smaller segment first
+2. Verify rlog file is not corrupted (must be uncompressed `.rlog` format)
+3. If you have a `.bz2` file, decompress it first: `bzip2 -d rlog.bz2`
+4. Ensure DBC files are valid
+5. Try importing a smaller segment first
 
 ### 7. Working Offline
 
