@@ -267,6 +267,11 @@ openpilot-log-viewer-release/
 
 歡迎貢獻！請隨時提交 issue 或 pull request。
 
+## 聯絡方式
+
+- **Discord**: henryccy
+- **LINE ID**: henryccy
+
 ## 相關連結
 
 - [openpilot](https://github.com/commaai/openpilot) - openpilot 0.9.7+

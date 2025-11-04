@@ -267,6 +267,11 @@ This project is based on openpilot and follows its open-source license.
 
 Contributions are welcome! Please feel free to submit issues or pull requests.
 
+## Contact
+
+- **Discord**: henryccy
+- **LINE ID**: henryccy
+
 ## Links
 
 - [openpilot](https://github.com/commaai/openpilot) - openpilot 0.9.7+
