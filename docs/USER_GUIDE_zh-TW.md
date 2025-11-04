@@ -4,7 +4,8 @@
 
 本手冊將幫助您開始使用 openpilot Windows 記錄檔查看器，並充分利用其功能。
 
-**訊號定義**：使用 [FrogPilot](https://github.com/FrogAi/FrogPilot) 的訊號定義（相容 openpilot 0.9.7）
+**相容性**：適用於 openpilot 0.9.7+ 及任何分支版本（FrogPilot、comma 官方版、客製化版本等）
+**內建 log.capnp**：來自 FrogPilot（但您可以使用任何版本）
 
 ## 目錄
 
@@ -119,13 +120,14 @@
 
 1. 點擊 **工具 → 匯入訊號定義**
 2. 對話框顯示將要匯入的內容：
-   - 來自 `log.capnp` 的 Cereal 訊號（FrogPilot 定義檔，相容 openpilot 0.9.7）- 300-500 個訊號
+   - 來自 `log.capnp` 的 Cereal 訊號 - 300-500 個訊號
    - 來自 `data/dbc/` 資料夾的 DBC 檔案的 CAN 訊號
-3. 點擊 **開始匯入**
-4. 等待完成（通常 30-60 秒）
+3. 瀏覽並選擇您的 `log.capnp` 檔案（可來自 openpilot、FrogPilot 或任何分支版本）
+4. 點擊 **開始匯入**
+5. 等待完成（通常 30-60 秒）
 
 **必要檔案**：
-- `log.capnp`（主要 schema 檔案 - 來自 FrogPilot）
+- `log.capnp`（主要 schema 檔案 - 內建版本來自 FrogPilot，但您可以使用任何版本）
 - `car.capnp`、`legacy.capnp`、`custom.capnp`、`maptile.capnp`（依賴檔案 - 必須與 log.capnp 在同一目錄）
 - `data/dbc/` 資料夾中的 DBC 檔案
 
@@ -134,7 +136,7 @@
 ⚠️ **何時需要重新匯入**：
 - **首次**使用應用程式
 - **更新訊號定義檔後**（log.capnp 或 DBC 檔案）
-- **使用不同 openpilot/FrogPilot 版本的記錄檔時**
+- **使用不同 openpilot 版本的記錄檔時**
 
 ### 步驟 2：匯入 Segment
 

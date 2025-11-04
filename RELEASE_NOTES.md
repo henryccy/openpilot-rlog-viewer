@@ -1,6 +1,7 @@
 # Release Notes - v1.0.0
 
-**Signal Definitions**: Based on [FrogPilot](https://github.com/FrogAi/FrogPilot) signal definitions (openpilot 0.9.7 compatible)
+**Compatibility**: Works with openpilot 0.9.7+ and any fork (FrogPilot, comma, custom builds, etc.)
+**Included log.capnp**: From FrogPilot (but you can use any version)
 
 ## Quick Start for End Users
 
@@ -20,7 +21,7 @@
 2. **Import Signal Definitions** (first time and after updates)
    - Go to `Tools → Import Signal Definitions`
    - **Required files**:
-     - `log.capnp` (main schema - from FrogPilot, openpilot 0.9.7 compatible)
+     - `log.capnp` (main schema - included version is from FrogPilot, but you can use any version)
      - `car.capnp`, `legacy.capnp`, `custom.capnp`, `maptile.capnp` (dependencies - must be in same directory as log.capnp)
      - DBC files in `data/dbc/`
    - When importing, you only need to select `log.capnp`. The other 4 dependency files will be automatically loaded from the same directory.
@@ -171,7 +172,7 @@ Total size: ~316 MB
 | Privacy | Cloud upload | ✅ Local only |
 | Video Sync | Limited | ✅ Full synchronization |
 | Multilingual | English only | ✅ English + 中文 |
-| Signal Definitions | openpilot | ✅ FrogPilot (openpilot 0.9.7) |
+| Compatibility | openpilot | ✅ All versions and forks |
 
 ---
 
@@ -206,7 +207,7 @@ This project is based on openpilot and follows its open-source license. See `LIC
 ## Acknowledgments
 
 - **openpilot** team for the amazing self-driving platform
-- **FrogPilot** ([FrogAi/FrogPilot](https://github.com/FrogAi/FrogPilot)) - Signal definitions based on FrogPilot
+- **FrogPilot** ([FrogAi/FrogPilot](https://github.com/FrogAi/FrogPilot)) - Included log.capnp is from FrogPilot
 - **comma.ai** for C3/C3X devices and logging infrastructure
 
 ---

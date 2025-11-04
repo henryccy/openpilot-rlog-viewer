@@ -4,7 +4,8 @@
 
 一個原生的 Windows 應用程式，用於在本地查看和分析 openpilot 記錄檔，無需 Linux 環境，也不需要上傳到 connect.comma.ai。
 
-**訊號定義**：使用 [FrogPilot](https://github.com/FrogAi/FrogPilot) 的訊號定義（相容 openpilot 0.9.7）
+**相容性**：適用於 openpilot 0.9.7+ 及任何分支版本（FrogPilot、comma 官方版、客製化版本等）
+**內建 log.capnp**：來自 FrogPilot（但您可以使用任何版本）
 
 ## 為什麼要用這個工具？
 
@@ -74,9 +75,9 @@ openpilot 官方提供了 **plotjuggler** 和 **cabana** 用於記錄檔分析�
 
 5. **首次設定：匯入訊號定義**
    - 前往 `工具 → 匯入訊號定義`
-   - 這會從 `log.capnp`（FrogPilot 定義檔，相容 openpilot 0.9.7）匯入 cereal 訊號，從 DBC 檔案匯入 CAN 訊號
+   - 這會從 `log.capnp` 匯入 cereal 訊號，從 DBC 檔案匯入 CAN 訊號
    - **必要檔案**：
-     - `log.capnp`（主要 schema 檔案 - 來自 FrogPilot）
+     - `log.capnp`（主要 schema 檔案 - 內建版本來自 FrogPilot，但您可以使用任何版本）
      - `car.capnp`、`legacy.capnp`、`custom.capnp`、`maptile.capnp`（依賴檔案 - 必須與 log.capnp 在同一目錄）
      - `data/dbc/` 資料夾中的 DBC 檔案
    - 匯入時只需選擇 `log.capnp`，其他 4 個依賴檔案會自動從相同位置載入
@@ -85,7 +86,7 @@ openpilot 官方提供了 **plotjuggler** 和 **cabana** 用於記錄檔分析�
    ⚠️ **何時需要重新匯入**：
    - 首次使用應用程式
    - 更新訊號定義檔後（log.capnp 或 DBC 檔案）
-   - 使用不同 openpilot/FrogPilot 版本的記錄檔時
+   - 使用不同 openpilot 版本的記錄檔時
 
 6. **匯入與分析 Segment**
    - 使用 `工具 → 匯入 Segment` 載入你的 rlog 檔案
@@ -209,7 +210,7 @@ openpilot-log-viewer-release/
 **A**：不完全是。此工具專注於 Windows 使用者和本地分析。plotjuggler/cabana 在 Linux 生態系統中有其優勢。
 
 ### Q：支援什麼記錄檔格式？
-**A**：目前僅支援 openpilot rlog 格式（未壓縮的 `.rlog` 檔案）。記錄檔應包含 cereal 訊息。相容 openpilot 0.9.7 和 FrogPilot。
+**A**：目前僅支援 openpilot rlog 格式（未壓縮的 `.rlog` 檔案）。記錄檔應包含 cereal 訊息。相容 openpilot 0.9.7+ 及任何分支版本（FrogPilot、comma 官方版、客製化版本）。
 
 注意：不支援 `.bz2` 壓縮檔。請先解壓縮：`bzip2 -d rlog.bz2`
 
@@ -217,12 +218,12 @@ openpilot-log-viewer-release/
 **A**：是的，以下情況需要重新匯入：
 - 首次使用應用程式
 - 更新訊號定義檔後（log.capnp 或 DBC 檔案）
-- 切換不同 openpilot/FrogPilot 版本時
+- 切換不同 openpilot 版本時
 
 確保所有 5 個 capnp 檔案（`log.capnp`、`car.capnp`、`legacy.capnp`、`custom.capnp`、`maptile.capnp`）都在同一目錄中。匯入時只需選擇 `log.capnp`，其他 4 個檔案會自動從相同位置載入。
 
 ### Q：這個工具相容哪個 openpilot 版本？
-**A**：本發行版使用 FrogPilot 的訊號定義（基於 openpilot 0.9.7）。應該可以處理大多數 openpilot 0.9.x 和 FrogPilot 的記錄檔。
+**A**：本檢視器適用於 openpilot 0.9.7+ 及任何分支版本（FrogPilot、comma 官方版、客製化版本）。您可以匯入任何版本的 log.capnp 檔案。內建範例來自 FrogPilot，但您可以自由使用自己的版本。
 
 ### Q：如何設定 C3/C3X SSH 存取？
 **A**：現代 comma 設備需要 SSH 金鑰認證。請搜尋「comma 3 SSH key 設定」或「comma 3X SSH 存取 GitHub key」以獲取詳細指南。
@@ -256,7 +257,7 @@ openpilot-log-viewer-release/
 ## 致謝
 
 - **openpilot** 團隊提供的優秀自動駕駛平台
-- **FrogPilot** ([FrogAi/FrogPilot](https://github.com/FrogAi/FrogPilot)) - 訊號定義基於 FrogPilot
+- **FrogPilot** ([FrogAi/FrogPilot](https://github.com/FrogAi/FrogPilot)) - 內建 log.capnp 來自 FrogPilot
 - **comma.ai** 提供 C3/C3X 設備和記錄基礎設施
 - **PyQt6** GUI 框架
 - **pyqtgraph** 高效能繪圖庫
@@ -267,8 +268,8 @@ openpilot-log-viewer-release/
 
 ## 相關連結
 
-- [openpilot](https://github.com/commaai/openpilot) - openpilot 0.9.7
-- [FrogPilot](https://github.com/FrogAi/FrogPilot) - 訊號定義來源
+- [openpilot](https://github.com/commaai/openpilot) - openpilot 0.9.7+
+- [FrogPilot](https://github.com/FrogAi/FrogPilot) - 內建 log.capnp 來源
 - [comma.ai](https://comma.ai/)
 - [編譯說明](README_BUILD.md)
 

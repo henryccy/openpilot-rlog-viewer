@@ -4,7 +4,8 @@
 
 This guide will help you get started with the openpilot Windows Log Viewer and make the most of its features.
 
-**Signal Definitions**: Based on [FrogPilot](https://github.com/FrogAi/FrogPilot) signal definitions (openpilot 0.9.7 compatible)
+**Compatibility**: Works with openpilot 0.9.7+ and any fork (FrogPilot, comma, custom builds, etc.)
+**Included log.capnp**: From FrogPilot (but you can use any version)
 
 ## Table of Contents
 
@@ -119,13 +120,14 @@ Before importing any logs, you need to import signal definitions:
 
 1. Click **Tools → Import Signal Definitions**
 2. The dialog shows what will be imported:
-   - Cereal signals from `log.capnp` (FrogPilot definitions, openpilot 0.9.7 compatible) - 300-500 signals
+   - Cereal signals from `log.capnp` - 300-500 signals
    - CAN signals from DBC files in `data/dbc/` folder
-3. Click **Start Import**
-4. Wait for completion (typically 30-60 seconds)
+3. Select your `log.capnp` file (from openpilot, FrogPilot, or any fork)
+4. Click **Start Import**
+5. Wait for completion (typically 30-60 seconds)
 
 **Required Files**:
-- `log.capnp` (main schema file - from FrogPilot)
+- `log.capnp` (main schema file - included version is from FrogPilot, but you can use any version)
 - `car.capnp`, `legacy.capnp`, `custom.capnp`, `maptile.capnp` (dependency files - must be in the same directory as log.capnp)
 - DBC files in `data/dbc/` folder
 
@@ -134,7 +136,7 @@ Note: When importing, you only need to select `log.capnp`. The other 4 dependenc
 ⚠️ **When to Re-import**:
 - **First time** using the application
 - **After updating signal definition files** (log.capnp or DBC files)
-- **When using logs from different openpilot/FrogPilot versions**
+- **When using logs from different openpilot versions**
 
 ### Step 2: Import Segment
 

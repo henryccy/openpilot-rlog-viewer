@@ -4,7 +4,8 @@
 
 A native Windows application for viewing and analyzing openpilot logs locally, without the need for Linux environment or uploading to connect.comma.ai.
 
-**Signal Definitions**: Based on [FrogPilot](https://github.com/FrogAi/FrogPilot) signal definitions (openpilot 0.9.7 compatible)
+**Compatibility**: Works with openpilot 0.9.7+ and any fork (FrogPilot, comma, custom builds, etc.)
+**Included log.capnp**: From FrogPilot (but you can use any version)
 
 ## Why This Tool?
 
@@ -74,9 +75,9 @@ openpilot officially provides **plotjuggler** and **cabana** for log analysis, b
 
 5. **First Time Setup: Import Signal Definitions**
    - Go to `Tools → Import Signal Definitions`
-   - This imports cereal signals from `log.capnp` (FrogPilot definitions, openpilot 0.9.7 compatible) and CAN signals from DBC files
+   - This imports cereal signals from `log.capnp` and CAN signals from DBC files
    - **Required files**:
-     - `log.capnp` (main schema file - from FrogPilot)
+     - `log.capnp` (main schema file - included version is from FrogPilot, but you can use any version)
      - `car.capnp`, `legacy.capnp`, `custom.capnp`, `maptile.capnp` (dependency files - must be in the same directory as log.capnp)
      - DBC files in `data/dbc/` folder
    - When importing, you only need to select `log.capnp`. The other 4 dependency files will be automatically loaded from the same directory.
@@ -85,7 +86,7 @@ openpilot officially provides **plotjuggler** and **cabana** for log analysis, b
    ⚠️ **When to Re-import**:
    - First time using the application
    - After updating signal definition files (log.capnp or DBC files)
-   - When using logs from different openpilot/FrogPilot versions
+   - When using logs from different openpilot versions
 
 6. **Import and Analyze Segments**
    - Use `Tools → Import Segment` to load your rlog file
@@ -209,7 +210,7 @@ openpilot-log-viewer-release/
 **A**: Not entirely. This tool focuses on Windows users and local analysis. plotjuggler/cabana have their own strengths in the Linux ecosystem.
 
 ### Q: What log format is supported?
-**A**: Currently supports openpilot rlog format (uncompressed `.rlog` files only). The log should contain cereal messages. Compatible with openpilot 0.9.7 and FrogPilot.
+**A**: Currently supports openpilot rlog format (uncompressed `.rlog` files only). The log should contain cereal messages. Compatible with openpilot 0.9.7+ and any fork (FrogPilot, comma official, custom builds).
 
 Note: `.bz2` compressed files are not supported. Please decompress them first using: `bzip2 -d rlog.bz2`
 
@@ -217,12 +218,12 @@ Note: `.bz2` compressed files are not supported. Please decompress them first us
 **A**: Yes, re-import when:
 - First time using the application
 - After updating signal definition files (log.capnp or DBC files)
-- When switching between different openpilot/FrogPilot versions
+- When switching between different openpilot versions
 
 Make sure all 5 capnp files (`log.capnp`, `car.capnp`, `legacy.capnp`, `custom.capnp`, `maptile.capnp`) are in the same directory. You only need to select `log.capnp` when importing - the other 4 files will be automatically loaded from the same location.
 
-### Q: Which openpilot version is this compatible with?
-**A**: This release uses signal definitions from FrogPilot (based on openpilot 0.9.7). It should work with most openpilot 0.9.x and FrogPilot logs.
+### Q: Which openpilot version is compatible?
+**A**: This viewer works with openpilot 0.9.7+ and any fork (FrogPilot, comma official, custom builds). You can import any version's log.capnp file. The included sample is from FrogPilot, but you're free to use your own.
 
 ### Q: How do I setup SSH access to C3/C3X?
 **A**: Modern comma devices require SSH key authentication. Search for "comma 3 SSH key setup" or "comma 3X SSH access GitHub key" for detailed guides.
@@ -256,7 +257,7 @@ This project is based on openpilot and follows its open-source license.
 ## Acknowledgments
 
 - **openpilot** team for the amazing self-driving platform
-- **FrogPilot** ([FrogAi/FrogPilot](https://github.com/FrogAi/FrogPilot)) - Signal definitions based on FrogPilot
+- **FrogPilot** ([FrogAi/FrogPilot](https://github.com/FrogAi/FrogPilot)) - Included log.capnp is from FrogPilot
 - **comma.ai** for C3/C3X devices and logging infrastructure
 - **PyQt6** for the GUI framework
 - **pyqtgraph** for high-performance plotting
@@ -267,8 +268,8 @@ Contributions are welcome! Please feel free to submit issues or pull requests.
 
 ## Links
 
-- [openpilot](https://github.com/commaai/openpilot) - openpilot 0.9.7
-- [FrogPilot](https://github.com/FrogAi/FrogPilot) - Signal definitions source
+- [openpilot](https://github.com/commaai/openpilot) - openpilot 0.9.7+
+- [FrogPilot](https://github.com/FrogAi/FrogPilot) - Included log.capnp source
 - [comma.ai](https://comma.ai/)
 - [Build Instructions](README_BUILD.md)
 
