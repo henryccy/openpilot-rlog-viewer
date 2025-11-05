@@ -38,3 +38,4 @@ test_data/
 
 # Release builds (use GitHub Releases instead)
 release/
+*.zip

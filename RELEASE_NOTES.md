@@ -8,9 +8,11 @@
 
 ### Download and Run
 
-1. **Navigate to** `release/v1.0/` folder
-2. **Double-click** `OpenpilotLogViewer.exe` to start
-3. No installation or Python required!
+1. **Download** from [GitHub Releases](https://github.com/YOUR_USERNAME/openpilot-rlog-viewer/releases)
+   - Download `OpenpilotLogViewer-v1.0.0-Windows-x64.zip` (316 MB)
+2. **Extract** the ZIP file to any location (e.g., `C:\openpilot-viewer\`)
+3. **Double-click** `OpenpilotLogViewer.exe` to start
+4. No installation or Python required!
 
 ### First Time Setup
 

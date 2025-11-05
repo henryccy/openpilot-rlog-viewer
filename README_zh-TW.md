@@ -36,8 +36,10 @@ openpilot 官方提供了 **plotjuggler** 和 **cabana** 用於記錄檔分析�
 ### 一般使用者（無需程式設計）
 
 1. **下載發行版**
-   - 從 release 資料夾下載 `release/v1.0.zip`
+   - 前往 [GitHub Releases](https://github.com/YOUR_USERNAME/openpilot-rlog-viewer/releases)
+   - 下載 `OpenpilotLogViewer-v1.0.0-Windows-x64.zip`（316 MB）
    - 解壓縮到任意位置（例如 `C:\openpilot-viewer\`）
+   - 解壓縮後的資料夾包含 `OpenpilotLogViewer.exe` 及所有相依檔案
 
 2. **設定 C3/C3X SSH 存取**（僅首次）
 

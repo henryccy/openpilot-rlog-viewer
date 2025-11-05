@@ -36,8 +36,10 @@ openpilot officially provides **plotjuggler** and **cabana** for log analysis, b
 ### For End Users (No Programming Required)
 
 1. **Download Release**
-   - Download `release/v1.0.zip` from the release folder
+   - Go to [GitHub Releases](https://github.com/YOUR_USERNAME/openpilot-rlog-viewer/releases)
+   - Download `OpenpilotLogViewer-v1.0.0-Windows-x64.zip` (316 MB)
    - Extract to any location (e.g., `C:\openpilot-viewer\`)
+   - The extracted folder contains `OpenpilotLogViewer.exe` and all dependencies
 
 2. **Setup SSH Access to C3/C3X** (First Time Only)
 
