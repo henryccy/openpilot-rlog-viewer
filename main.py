@@ -25,6 +25,11 @@ if __name__ == "__main__":
     # 確保 src 目錄在路徑中
     sys.path.insert(0, str(app_dir))
 
+    # 確保 _internal 目錄在路徑中（讓外部 src/ 能找到 PyQt6 等依賴）
+    internal_dir = app_dir / "_internal"
+    if internal_dir.exists():
+        sys.path.insert(0, str(internal_dir))
+
     # 動態載入 src.app 模組（PyInstaller 無法追蹤）
     app_module_path = app_dir / "src" / "app.py"
 
