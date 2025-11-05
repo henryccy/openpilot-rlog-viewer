@@ -23,14 +23,19 @@
 
 2. **Import Signal Definitions** (first time and after updates)
    - Go to `Tools → Import Signal Definitions`
-   - **Required files**:
-     - `log.capnp` (main schema - included version is from FrogPilot, but you can use any version)
-     - `car.capnp`, `legacy.capnp`, `custom.capnp`, `maptile.capnp` (dependencies - must be in same directory as log.capnp)
-     - DBC files in `data/dbc/`
-   - When importing, you only need to select `log.capnp`. The other 4 dependency files will be automatically loaded from the same directory.
-   - Click "Start Import"
-   - Wait for completion (~30-60 seconds)
-   - Re-import when updating signal definition files or using logs from different versions
+   - **Included files**:
+     - `oplog.db` - Empty database with complete table structure (no data)
+     - `log.capnp`, `car.capnp`, `legacy.capnp`, `custom.capnp`, `maptile.capnp` - Signal schema files from FrogPilot
+     - `vw_mqb.dbc` - Sample DBC file (you can use your own)
+   - **Import process**:
+     - Select `log.capnp` file (the other 4 .capnp files must be in same directory)
+     - Optionally select DBC file (e.g., `vw_mqb.dbc` or your own)
+     - Click "Start Import"
+     - Wait for completion (~30-60 seconds)
+   - **When to re-import**:
+     - After openpilot version update
+     - When switching to different openpilot fork
+     - When using custom DBC files
 
 3. **Get Logs from C3/C3X**
    - ⚠️ **Important**: Must copy the entire segment directory (e.g., `2024-01-01--12-00-00/`), not individual files

@@ -23,10 +23,12 @@ class SQLiteManager:
             db_path: Database file path (if None, use default path)
         """
         if db_path is None:
-            db_path = "data/openpilot.db"
+            db_path = "oplog.db"
 
         self.db_path = Path(db_path)
-        self.db_path.parent.mkdir(parents=True, exist_ok=True)
+        # Only create parent directory if it doesn't exist
+        if not self.db_path.parent.exists():
+            self.db_path.parent.mkdir(parents=True, exist_ok=True)
 
         self.conn = None
         self.cursor = None  # Add cursor attribute for compatibility
