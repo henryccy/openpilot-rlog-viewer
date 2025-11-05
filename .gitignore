@@ -35,3 +35,6 @@ Thumbs.db
 test_data/
 *.rlog
 *.hevc
+
+# Release builds (use GitHub Releases instead)
+release/
