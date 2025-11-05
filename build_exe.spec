@@ -57,8 +57,9 @@ a = Analysis(
         'numpy.core',
         'numpy.core._multiarray_umath',
 
-        # 注意：不再需要 pycapnp！
-        # 幀時間戳記已在匯入時儲存到資料庫
+        # pycapnp 相關（匯入訊號定義時需要）
+        'capnp',
+        'capnp.lib.capnp',
 
         # av 相關
         'av',
