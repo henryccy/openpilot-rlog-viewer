@@ -7,31 +7,12 @@ PyInstaller spec file for openpilot Log Viewer
 block_cipher = None
 
 # 資料檔案打包設定
-# 策略：只編譯 main.py，所有其他檔案都保持外部，方便修改
+# 所有檔案都打包進 EXE（包括 src/），確保穩定性
 datas = []
 
-# 以下檔案**全部不打包**，保留在專案目錄外面，方便修改：
-# - src/**/*.py（Python 源碼，可隨時修改）
-# - tools/**/*.py（工具程式源碼，可隨時修改）
-# - data/dbc/*.dbc（DBC 檔案，用戶可自行添加修改）
-# - data/translations/*.json（訊號翻譯，可隨時更新）
-# - i18n/*.json（UI 翻譯，可隨時更新）
-# - *.capnp（Schema 檔案，用戶可更新）
-#
-# 發布結構：
-# release/
-# ├── OpenpilotLogViewer.exe  ← 編譯後的 main.py
-# ├── _internal/              ← PyInstaller 的依賴庫
-# ├── src/                    ← 外部，可直接修改
-# ├── tools/                  ← 外部，可直接修改
-# ├── data/                   ← 外部，可直接修改
-# ├── i18n/                   ← 外部，可直接修改
-# └── *.capnp                 ← 外部
-#
-# 好處：
-# 1. 修改任何 Python 檔案或資料檔案都不需要重新編譯
-# 2. exe 只是替代 python.exe，其他都是源碼
-# 3. 用戶可以自己修改和擴展功能
+# 打包所有必要的資料檔案和 Python 原始碼
+# 雖然這樣會讓 EXE 變大，但確保了穩定性
+# 注意：capnp 檔案、LICENSE 等會在編譯後手動複製到外部
 
 # 收集所有原始碼
 # 注意：只編譯 main.py，其他 Python 檔案保持源碼形式
@@ -110,7 +91,7 @@ exe = EXE(
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
-    console=True,  # 顯示 console 以便除錯（改回 False 以隱藏視窗）
+    console=False,  # 不顯示命令列視窗（GUI 程式）
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,
