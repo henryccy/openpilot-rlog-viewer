@@ -6,7 +6,7 @@ PyQt6>=6.5.0
 PyQt6-Qt6>=6.5.0
 
 # Cap'n Proto Parser
-pycapnp>=1.3.0
+pycapnp==2.2.0
 
 # DBC File Parser
 cantools>=39.0.0
@@ -14,6 +14,7 @@ cantools>=39.0.0
 # Video Processing
 opencv-python>=4.8.0
 av>=10.0.0
+Pillow>=10.0.0
 
 # Plotting
 pyqtgraph>=0.13.0

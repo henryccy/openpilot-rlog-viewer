@@ -505,11 +505,55 @@ class SQLiteManager:
             return None
 
     def delete_route(self, route_id: str) -> bool:
-        """Delete route and all related data (CASCADE)"""
+        """Delete route and all related data (manual batch delete for performance)"""
         try:
+            # First get all segment_id
             with self.get_cursor() as cur:
-                cur.execute("DELETE FROM routes WHERE route_id = ?", (route_id,))
-            logger.info(f"Deleted route: {route_id}")
+                cur.execute("SELECT segment_id FROM segments WHERE route_id = ?", (route_id,))
+                segment_ids = [row[0] for row in cur.fetchall()]
+
+            if segment_ids:
+                logger.info(f"Deleting {len(segment_ids)} segments for route {route_id}")
+
+                # Temporarily disable foreign key checks for performance
+                with self.get_cursor() as cur:
+                    cur.execute("PRAGMA foreign_keys = OFF")
+
+                    # Batch delete related data
+                    placeholders = ','.join('?' * len(segment_ids))
+
+                    # Delete timeseries_data
+                    cur.execute(f"DELETE FROM timeseries_data WHERE segment_id IN ({placeholders})", segment_ids)
+                    logger.debug(f"Deleted timeseries_data for {len(segment_ids)} segments")
+
+                    # Delete can_messages
+                    cur.execute(f"DELETE FROM can_messages WHERE segment_id IN ({placeholders})", segment_ids)
+                    logger.debug(f"Deleted can_messages for {len(segment_ids)} segments")
+
+                    # Delete log_messages
+                    cur.execute(f"DELETE FROM log_messages WHERE segment_id IN ({placeholders})", segment_ids)
+                    logger.debug(f"Deleted log_messages for {len(segment_ids)} segments")
+
+                    # Delete video_frame_timestamps
+                    cur.execute(f"DELETE FROM video_frame_timestamps WHERE segment_id IN ({placeholders})", segment_ids)
+                    logger.debug(f"Deleted video_frame_timestamps for {len(segment_ids)} segments")
+
+                    # Delete segments
+                    cur.execute("DELETE FROM segments WHERE route_id = ?", (route_id,))
+                    logger.debug(f"Deleted segments for route {route_id}")
+
+                    # Delete route
+                    cur.execute("DELETE FROM routes WHERE route_id = ?", (route_id,))
+                    logger.debug(f"Deleted route {route_id}")
+
+                    # Restore foreign key checks
+                    cur.execute("PRAGMA foreign_keys = ON")
+            else:
+                # No segments, delete route directly
+                with self.get_cursor() as cur:
+                    cur.execute("DELETE FROM routes WHERE route_id = ?", (route_id,))
+
+            logger.info(f"Successfully deleted route: {route_id}")
             return True
         except sqlite3.Error as e:
             logger.error(f"Error deleting route: {e}")
@@ -527,7 +571,9 @@ class SQLiteManager:
                        ecamera_path: str = None,
                        fcamera_path: str = None,
                        qcamera_path: str = None,
-                       total_events: int = 0) -> Optional[int]:
+                       total_events: int = 0,
+                       gps_timestamp: int = None,
+                       thumbnail_path: str = None) -> Optional[int]:
         """
         Insert segment
 
@@ -544,6 +590,8 @@ class SQLiteManager:
             fcamera_path: fcamera file path
             qcamera_path: qcamera file path
             total_events: Total number of events
+            gps_timestamp: Segment's GPS time (Unix timestamp in seconds), if available
+            thumbnail_path: Video preview thumbnail path
         """
         # Support both parameter names
         if segment_number is None and segment_num is not None:
@@ -551,19 +599,61 @@ class SQLiteManager:
 
         try:
             with self.get_cursor() as cur:
+                # Check if segment already exists
                 cur.execute("""
-                    INSERT INTO segments (
-                        route_id, segment_number,
-                        start_time_ns, end_time_ns, wall_time_offset,
-                        duration_seconds, total_events,
-                        rlog_path, ecamera_path, fcamera_path, qcamera_path
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """, (route_id, segment_number,
-                      start_time_ns, end_time_ns, wall_time_offset,
-                      duration_sec, total_events,
-                      rlog_path, ecamera_path, fcamera_path, qcamera_path))
+                    SELECT segment_id FROM segments
+                    WHERE route_id = ? AND segment_number = ?
+                """, (route_id, segment_number))
+                existing = cur.fetchone()
 
-                segment_id = cur.lastrowid
+                if existing:
+                    # Segment already exists, delete old data and re-insert
+                    segment_id = existing[0]
+                    logger.warning(f"Segment {route_id}/{segment_number} already exists (ID: {segment_id}), deleting old data...")
+
+                    # Delete associated timeseries_data, can_messages, log_messages, video_frame_timestamps
+                    cur.execute("DELETE FROM timeseries_data WHERE segment_id = ?", (segment_id,))
+                    cur.execute("DELETE FROM can_messages WHERE segment_id = ?", (segment_id,))
+                    cur.execute("DELETE FROM log_messages WHERE segment_id = ?", (segment_id,))
+                    cur.execute("DELETE FROM video_frame_timestamps WHERE segment_id = ?", (segment_id,))
+
+                    # Update segment information
+                    cur.execute("""
+                        UPDATE segments SET
+                            start_time_ns = ?,
+                            end_time_ns = ?,
+                            wall_time_offset = ?,
+                            duration_seconds = ?,
+                            total_events = ?,
+                            rlog_path = ?,
+                            ecamera_path = ?,
+                            fcamera_path = ?,
+                            qcamera_path = ?,
+                            gps_timestamp = ?,
+                            thumbnail_path = ?
+                        WHERE segment_id = ?
+                    """, (start_time_ns, end_time_ns, wall_time_offset,
+                          duration_sec, total_events,
+                          rlog_path, ecamera_path, fcamera_path, qcamera_path,
+                          gps_timestamp, thumbnail_path,
+                          segment_id))
+                else:
+                    # Insert new segment
+                    cur.execute("""
+                        INSERT INTO segments (
+                            route_id, segment_number,
+                            start_time_ns, end_time_ns, wall_time_offset,
+                            duration_seconds, total_events,
+                            rlog_path, ecamera_path, fcamera_path, qcamera_path,
+                            gps_timestamp, thumbnail_path
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """, (route_id, segment_number,
+                          start_time_ns, end_time_ns, wall_time_offset,
+                          duration_sec, total_events,
+                          rlog_path, ecamera_path, fcamera_path, qcamera_path,
+                          gps_timestamp, thumbnail_path))
+
+                    segment_id = cur.lastrowid
 
                 # Update route segment count
                 cur.execute("""
@@ -602,7 +692,9 @@ class SQLiteManager:
                         end_time_ns,
                         wall_time_offset,
                         ROUND((end_time_ns - start_time_ns) / 1000000000.0, 2) as duration_seconds,
-                        total_events
+                        total_events,
+                        gps_timestamp,
+                        thumbnail_path
                     FROM segments
                     WHERE route_id = ?
                     ORDER BY segment_number
@@ -613,11 +705,18 @@ class SQLiteManager:
             result = []
 
             for row in rows:
-                segment_id, segment_number, start_time_ns, end_time_ns, wall_time_offset, duration_seconds, total_events = row
+                segment_id, segment_number, start_time_ns, end_time_ns, wall_time_offset, duration_seconds, total_events, gps_timestamp, thumbnail_path = row
 
-                # Prioritize route's start_timestamp (accurate time calculated from GPS)
-                if route_start_timestamp:
-                    # Calculate this segment's actual start time
+                # Prioritize segment's own GPS timestamp
+                if gps_timestamp:
+                    # Use segment's own GPS timestamp (segment start time)
+                    segment_start_timestamp = gps_timestamp
+                    segment_end_timestamp = segment_start_timestamp + duration_seconds
+
+                    start_time = datetime.fromtimestamp(segment_start_timestamp).strftime('%Y-%m-%d %H:%M:%S')
+                    end_time = datetime.fromtimestamp(segment_end_timestamp).strftime('%Y-%m-%d %H:%M:%S')
+                elif route_start_timestamp:
+                    # Calculate from route's start_timestamp (accurate time calculated from GPS)
                     segment_start_timestamp = route_start_timestamp + (segment_number * 60)
                     segment_end_timestamp = segment_start_timestamp + duration_seconds
 
@@ -637,7 +736,8 @@ class SQLiteManager:
                     'start_time': start_time,
                     'end_time': end_time,
                     'duration_sec': duration_seconds,
-                    'total_events': total_events if total_events else 0
+                    'total_events': total_events if total_events else 0,
+                    'thumbnail_path': thumbnail_path
                 })
 
             return result

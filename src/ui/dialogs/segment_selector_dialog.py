@@ -8,7 +8,7 @@ from PyQt6.QtWidgets import (
     QTableWidget, QTableWidgetItem, QFileDialog,
     QLabel, QProgressBar, QHeaderView, QAbstractItemView
 )
-from PyQt6.QtCore import Qt, QThread, pyqtSignal
+from PyQt6.QtCore import Qt, QThread, pyqtSignal, QSettings
 from PyQt6.QtGui import QColor, QPixmap, QImage
 from pathlib import Path
 from datetime import datetime
@@ -16,6 +16,7 @@ from typing import List, Dict, Optional
 import capnp
 import logging
 import av  # PyAV for video decoding
+import json
 
 logger = logging.getLogger(__name__)
 
@@ -31,37 +32,177 @@ class SegmentScanner(QThread):
     """Background thread to scan segments and retrieve time information"""
     segment_found = pyqtSignal(dict)  # Found a segment
     scan_finished = pyqtSignal(int)  # Scan finished, parameter is total count
+    cache_loaded = pyqtSignal(int)  # Cache loaded, parameter is item count
 
     def __init__(self, root_dir: str, db_manager=None):
         super().__init__()
         self.root_dir = Path(root_dir)
         self.db_manager = db_manager
         self.running = True
+        self.cache_file = self.root_dir / ".oplog_cache.json"
 
     def stop(self):
         """Stop scanning"""
         self.running = False
 
+    def load_cache(self) -> List[Dict]:
+        """Load cache file"""
+        try:
+            if self.cache_file.exists():
+                with open(self.cache_file, 'r', encoding='utf-8') as f:
+                    cache_data = json.load(f)
+                    logger.info(f"Loaded {len(cache_data)} segments from cache")
+                    return cache_data
+        except Exception as e:
+            logger.warning(f"Failed to load cache: {e}")
+        return []
+
+    def save_cache(self, segments: List[Dict]):
+        """Save cache file"""
+        try:
+            # Cache all necessary information (excluding thumbnails, as they're read directly from segment directory)
+            cache_data = []
+            for seg in segments:
+                cache_item = {
+                    'dir_name': seg['dir_name'],
+                    'segment_num': seg['segment_num'],
+                    'gps_time': seg.get('gps_time'),
+                    'wall_time': seg.get('wall_time'),
+                    'file_size': seg['file_size'],
+                    'path': seg['path']
+                }
+                cache_data.append(cache_item)
+
+            with open(self.cache_file, 'w', encoding='utf-8') as f:
+                json.dump(cache_data, f, ensure_ascii=False, indent=2)
+            logger.info(f"Saved {len(cache_data)} segments to cache")
+        except Exception as e:
+            logger.warning(f"Failed to save cache: {e}")
+
     def run(self):
         """Scan all segments under root_dir"""
+        # First try to load cache
+        cached_segments = self.load_cache()
+        if cached_segments:
+            for seg_info in cached_segments:
+                if not self.running:
+                    return
+                # Load thumbnail from segment directory
+                try:
+                    rlog_path = Path(seg_info['path'])
+                    segment_num = seg_info['segment_num']
+                    thumbnail_file = rlog_path.parent / f"thumbnail_{segment_num}.jpg"
+
+                    if thumbnail_file.exists():
+                        seg_info['thumbnail'] = QPixmap(str(thumbnail_file))
+                    else:
+                        seg_info['thumbnail'] = None
+                except Exception as e:
+                    logger.debug(f"Failed to load thumbnail from cache: {e}")
+                    seg_info['thumbnail'] = None
+
+                self.segment_found.emit(seg_info)
+            self.cache_loaded.emit(len(cached_segments))
+
+        # Then perform actual scan and update cache (only check for new segments)
         count = 0
+        scanned_segments = []
 
         try:
+            # Build cache path set for quick lookup
+            cached_paths = set(s['path'] for s in cached_segments) if cached_segments else set()
+
             # Recursively search for all rlog files
             for rlog_path in self.root_dir.rglob('rlog'):
                 if not self.running:
                     break
 
-                # Parse path
-                segment_info = self.parse_segment(rlog_path)
-                if segment_info:
-                    self.segment_found.emit(segment_info)
-                    count += 1
+                rlog_path_str = str(rlog_path)
+
+                # Check if in cache
+                if rlog_path_str in cached_paths:
+                    # Already in cache, get data directly from cache (don't re-parse)
+                    for cached_seg in cached_segments:
+                        if cached_seg['path'] == rlog_path_str:
+                            scanned_segments.append(cached_seg)
+                            count += 1
+                            break
+                else:
+                    # New segment, needs parsing
+                    segment_info = self.parse_segment(rlog_path)
+                    if segment_info:
+                        self.segment_found.emit(segment_info)  # Display newly discovered segment
+                        scanned_segments.append(segment_info)
+                        count += 1
+                        logger.info(f"Found new segment: {segment_info['dir_name']}")
 
         except Exception as e:
             logger.error(f"Error scanning segments: {e}")
 
+        # Save updated cache (only update if there are changes)
+        if scanned_segments and (not cached_segments or len(scanned_segments) != len(cached_segments)):
+            self.save_cache(scanned_segments)
+            logger.info(f"Updated cache with {len(scanned_segments)} segments")
+
         self.scan_finished.emit(count)
+
+    def _generate_and_save_thumbnail(self, segment_dir: Path, thumbnail_path: Path) -> Optional[QPixmap]:
+        """
+        Generate thumbnail from video and save to file
+
+        Args:
+            segment_dir: Segment directory path
+            thumbnail_path: Thumbnail save path
+
+        Returns:
+            QPixmap thumbnail, None if failed
+        """
+        try:
+            # Try fcamera (front view) first, then ecamera (wide angle)
+            video_files = ['fcamera.hevc', 'ecamera.hevc']
+
+            for video_file in video_files:
+                video_path = segment_dir / video_file
+                if not video_path.exists():
+                    continue
+
+                # Use PyAV to read first frame
+                try:
+                    container = av.open(str(video_path))
+                    stream = container.streams.video[0]
+
+                    # Read only first frame
+                    for frame in container.decode(stream):
+                        # Convert to RGB
+                        img = frame.to_ndarray(format='rgb24')
+                        height, width, channel = img.shape
+
+                        # Convert to QImage
+                        bytes_per_line = 3 * width
+                        q_img = QImage(bytes(img.data), width, height, bytes_per_line, QImage.Format.Format_RGB888)
+
+                        # Scale to thumbnail (width 320 px, consistent with segment_importer)
+                        pixmap = QPixmap.fromImage(q_img)
+                        thumbnail = pixmap.scaledToWidth(320, Qt.TransformationMode.SmoothTransformation)
+
+                        # Save to file
+                        thumbnail.save(str(thumbnail_path), 'JPEG', 85)
+                        logger.info(f"Generated thumbnail: {thumbnail_path.name}")
+
+                        container.close()
+                        # Return display-sized small thumbnail (width 100 px)
+                        return thumbnail.scaledToWidth(100, Qt.TransformationMode.SmoothTransformation)
+
+                    container.close()
+                except Exception as e:
+                    logger.debug(f"Failed to read {video_file}: {e}")
+                    continue
+
+            return None
+
+        except Exception as e:
+            logger.debug(f"Error generating thumbnail: {e}")
+            return None
 
     def _get_video_thumbnail(self, segment_dir: Path) -> Optional[QPixmap]:
         """
@@ -151,19 +292,24 @@ class SegmentScanner(QThread):
 
         if self.db_manager:
             try:
-                # Query route timestamp from database
+                # Query segment gps_timestamp from database
                 cursor = self.db_manager.conn.cursor()
                 cursor.execute("""
-                    SELECT timestamp
-                    FROM routes
-                    WHERE route_id = ?
-                """, (route_id,))
+                    SELECT s.gps_timestamp, r.timestamp
+                    FROM segments s
+                    JOIN routes r ON s.route_id = r.route_id
+                    WHERE s.route_id = ? AND s.segment_number = ?
+                """, (route_id, segment_num))
                 result = cursor.fetchone()
 
-                if result and result[0]:
-                    # Calculate this segment's time
-                    route_start_time = result[0]
-                    gps_time = route_start_time + (segment_num * 60)
+                if result:
+                    # gps_timestamp is segment's own GPS time (segment start time)
+                    if result[0]:
+                        gps_time = result[0]
+                    # If no GPS time, calculate segment start time from route timestamp
+                    elif result[1]:
+                        route_start_time = result[1]
+                        gps_time = route_start_time + (segment_num * 60)
             except Exception as e:
                 logger.debug(f"Failed to query database: {e}")
 
@@ -182,10 +328,8 @@ class SegmentScanner(QThread):
                             if event.which() == 'liveLocationKalman':
                                 llk = event.liveLocationKalman
                                 if hasattr(llk, 'unixTimestampMillis') and llk.unixTimestampMillis > 0:
-                                    # GPS time (milliseconds)
-                                    gps_timestamp = int(llk.unixTimestampMillis / 1000)
-                                    # Backtrack to route start time (consistent with segment_importer)
-                                    gps_time = gps_timestamp - (segment_num * 60)
+                                    # GPS time (seconds) - this is segment's GPS time
+                                    gps_time = int(llk.unixTimestampMillis / 1000)
                                     break
                         except:
                             pass
@@ -219,12 +363,23 @@ class SegmentScanner(QThread):
             except:
                 pass
 
-        # Optional: Read video first frame as thumbnail
+        # Load or generate thumbnail
         thumbnail = None
-        try:
-            thumbnail = self._get_video_thumbnail(rlog_path.parent)
-        except Exception as e:
-            logger.debug(f"Error getting thumbnail: {e}")
+        thumbnail_filename = f"thumbnail_{segment_num}.jpg"
+        thumbnail_file = rlog_path.parent / thumbnail_filename
+
+        if thumbnail_file.exists():
+            # Directly load existing thumbnail file
+            try:
+                thumbnail = QPixmap(str(thumbnail_file))
+                if thumbnail.isNull():
+                    thumbnail = None
+            except Exception as e:
+                logger.debug(f"Failed to load thumbnail {thumbnail_file}: {e}")
+                thumbnail = None
+        else:
+            # If no thumbnail file, generate from video and save
+            thumbnail = self._generate_and_save_thumbnail(rlog_path.parent, thumbnail_file)
 
         # Return segment info - guaranteed to have basic fields
         return {
@@ -363,6 +518,11 @@ class SegmentSelectorDialog(QDialog):
         if dir_path:
             self.default_dir = dir_path
             self.dir_label.setText(t("Scan Directory:") + f" {dir_path}")
+
+            # Immediately save directory for next use
+            settings = QSettings("openpilot", "LogViewer")
+            settings.setValue("import/last_directory", dir_path)
+
             self.start_scan()
 
     def start_scan(self):
@@ -387,6 +547,7 @@ class SegmentSelectorDialog(QDialog):
         self.scanner_thread = SegmentScanner(self.default_dir, self.db_manager)
         self.scanner_thread.segment_found.connect(self.add_segment)
         self.scanner_thread.scan_finished.connect(self.scan_finished)
+        self.scanner_thread.cache_loaded.connect(self.cache_loaded)
         self.scanner_thread.start()
 
     def add_segment(self, segment_info: Dict):
@@ -399,16 +560,26 @@ class SegmentSelectorDialog(QDialog):
 
             # Column 0: Preview image
             try:
-                thumbnail_item = QTableWidgetItem()
                 if segment_info.get('thumbnail'):
-                    # If has thumbnail, set as icon
-                    thumbnail_item.setData(Qt.ItemDataRole.DecorationRole, segment_info['thumbnail'])
+                    # Use QLabel to display thumbnail with scaling
+                    thumbnail_label = QLabel()
+                    # Scale thumbnail to fit display (keep aspect ratio)
+                    scaled_pixmap = segment_info['thumbnail'].scaled(
+                        120, 70,
+                        Qt.AspectRatioMode.KeepAspectRatio,
+                        Qt.TransformationMode.SmoothTransformation
+                    )
+                    thumbnail_label.setPixmap(scaled_pixmap)
+                    thumbnail_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                    self.table.setCellWidget(row, 0, thumbnail_label)
+                    # Set row height to accommodate thumbnail
+                    self.table.setRowHeight(row, 75)
                 else:
                     # No thumbnail, display text
-                    thumbnail_item.setText(t("No Preview"))
+                    thumbnail_item = QTableWidgetItem(t("No Preview"))
                     thumbnail_item.setForeground(QColor(150, 150, 150))
-                thumbnail_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-                self.table.setItem(row, 0, thumbnail_item)
+                    thumbnail_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+                    self.table.setItem(row, 0, thumbnail_item)
             except Exception as e:
                 logger.error(f"Error setting preview for row {row}: {e}")
 
@@ -430,9 +601,8 @@ class SegmentSelectorDialog(QDialog):
             try:
                 if segment_info.get('gps_time'):
                     try:
-                        # gps_time is route start time, need to add segment offset
-                        segment_start_time = segment_info['gps_time'] + (segment_info['segment_num'] * 60)
-                        gps_str = datetime.fromtimestamp(segment_start_time).strftime('%Y-%m-%d %H:%M:%S')
+                        # gps_time is already the segment's start time, display directly
+                        gps_str = datetime.fromtimestamp(segment_info.get('gps_time')).strftime('%Y-%m-%d %H:%M:%S')
                         gps_item = QTableWidgetItem(gps_str)
                         gps_item.setBackground(QColor(200, 255, 200))  # Light green background
                     except:
@@ -484,6 +654,11 @@ class SegmentSelectorDialog(QDialog):
         except Exception as e:
             logger.error(f"Error adding segment to table: {e}", exc_info=True)
 
+    def cache_loaded(self, count: int):
+        """Cache loaded"""
+        t = self.translation_manager.t if self.translation_manager else lambda x: x
+        self.status_label.setText(t("Loaded cache {0} Segments, updating...").format(count))
+
     def scan_finished(self, count: int):
         """Scan finished"""
         t = self.translation_manager.t if self.translation_manager else lambda x: x
@@ -518,6 +693,10 @@ class SegmentSelectorDialog(QDialog):
     def get_selected_segments(self) -> List[str]:
         """Get selected segment path list"""
         return self.selected_segments
+
+    def get_current_directory(self) -> str:
+        """Get current scanned directory"""
+        return self.default_dir
 
     def closeEvent(self, event):
         """Stop scanner thread when closing window"""

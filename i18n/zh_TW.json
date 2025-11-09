@@ -289,6 +289,14 @@
   "Load Segment": "載入 Segment",
   "Processing...": "處理中...",
   "Completed": "已完成",
+  "Preparing to load...": "準備載入...",
+  "Clearing previous data...": "清空之前的資料...",
+  "Loading video...": "載入影片...",
+  "Loading signal data...": "載入訊號資料...",
+  "Setting up data table...": "設置資料表...",
+  "Setting up charts...": "設置圖表...",
+  "Load completed": "載入完成",
+  "Load failed": "載入失敗",
 
   "__Segment_Importer__": "===== Segment 匯入器 =====",
 

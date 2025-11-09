@@ -8,7 +8,16 @@ block_cipher = None
 
 # 資料檔案打包設定
 # 所有檔案都打包進 EXE（包括 src/），確保穩定性
-datas = []
+datas = [
+    # capnp include 目錄（必須包含，log.capnp 需要）
+    ('include', 'include'),
+    # 完整的 capnp Python 套件（從 venv 複製）
+    ('venv/Lib/site-packages/capnp', 'capnp'),
+    # src 目錄作為資料檔案（不編譯成 pyc）
+    ('src', 'src'),
+    # tools 目錄（單位定義等工具）
+    ('tools', 'tools'),
+]
 
 # 打包所有必要的資料檔案和 Python 原始碼
 # 雖然這樣會讓 EXE 變大，但確保了穩定性
@@ -72,6 +81,9 @@ a = Analysis(
         'jupyter',
         'notebook',
         'tkinter',
+        # 排除 src 避免被編譯（改用 datas 打包）
+        'src',
+        'src.*',
     ],
     win_no_prefer_redirects=False,
     win_private_assemblies=False,
@@ -91,7 +103,7 @@ exe = EXE(
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
-    console=False,  # 不顯示命令列視窗（GUI 程式）
+    console=True,  # 顯示命令列視窗以便除錯
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,

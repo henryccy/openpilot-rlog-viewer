@@ -313,7 +313,7 @@ class VideoPlayer(QWidget):
             self.display_frame(0)
             logger.info(f"Loaded video: {camera}, {len(self.frames)} frames @ {self.fps} FPS")
         else:
-            self.video_label.setText(f"無法載入影片\n{camera}")
+            self.video_label.setText(f"Unable to load video\n{camera}")
             self.play_button.setEnabled(False)
 
     def _load_with_pyav(self, video_path: str) -> bool:

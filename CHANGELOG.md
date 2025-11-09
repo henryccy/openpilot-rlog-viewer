@@ -2,6 +2,48 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.1] - 2025-11-08
+
+### Bug Fixes
+- **Fixed Re-import Segment Failure**: Resolved `NOT NULL constraint failed` error when re-importing existing segments
+  - `insert_segment` now detects existing segments and updates them instead of failing
+  - Automatically cleans up old associated data before re-import
+- **Optimized Route Deletion Performance**: Dramatically improved deletion speed
+  - Changed from CASCADE deletion to batch deletion
+  - Reduced deletion time from minutes to seconds for routes with many segments
+- **Fixed UI Update After Route Deletion**: Route list now refreshes correctly
+  - Clears selection state after deletion
+  - Allows consecutive deletions without closing window
+
+### Database Changes
+- Added `gps_timestamp` field to segments table (BIGINT)
+  - Stores segment's accurate GPS time for future features
+- Added `thumbnail_path` field to segments table (TEXT)
+  - Prepares for video thumbnail preview feature
+
+### Migration
+For existing databases, run:
+```sql
+ALTER TABLE segments ADD COLUMN gps_timestamp BIGINT;
+ALTER TABLE segments ADD COLUMN thumbnail_path TEXT;
+```
+
+### Technical Improvements
+- Batch deletion optimization using `IN (...)` clause
+- Temporary foreign key constraint disabling during batch operations
+- Better error handling for constraint violations
+- Improved database operation logging
+
+### Files Modified
+- `src/core/sqlite_manager.py`: insert_segment, delete_route
+- `src/core/segment_importer.py`: segment_id validation
+- `src/ui/dialogs/route_manager_dialog.py`: UI refresh logic
+- `database_schema_sqlite.sql`: schema updates
+
+See [CHANGELOG_2025-11-08.md](CHANGELOG_2025-11-08.md) for complete technical details.
+
+---
+
 ## [1.0.0] - 2024-11-03
 
 ### Added

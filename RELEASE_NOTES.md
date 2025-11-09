@@ -1,4 +1,48 @@
-# Release Notes - v1.0.0
+# Release Notes
+
+## v1.1.0 - November 8, 2025 (Feature Release) ✨
+
+### New Features
+- ✨ **Video Thumbnail Preview**: Auto-generate and display video thumbnails in segment selector and route manager
+- ⚡ **Smart Cache System**: Dramatically faster segment scanning with JSON cache (`.oplog_cache.json`)
+- 🕐 **GPS Time Optimization**: Accurate segment start time display with GPS priority logic
+- 💾 **Directory Memory**: Automatically remembers last used scan directory
+
+### Bug Fixes
+- ✅ **Fixed Re-import Failure**: Can now re-import segments without `NOT NULL constraint` errors
+- ✅ **Optimized Route Deletion**: Dramatically improved deletion speed (from minutes to seconds)
+- ✅ **Fixed UI Update Issue**: Route list now updates correctly after deletion
+- ✅ **Fixed Thumbnail Display**: Proper scaling in segment selector (120x70) and route manager (150x90)
+- ✅ **Suppressed Qt Warnings**: Removed Qt screen detection warnings on startup
+
+### Database Schema Updates
+- Added `gps_timestamp BIGINT` - Stores segment's own GPS time (Unix timestamp in seconds)
+- Added `thumbnail_path TEXT` - Stores video preview thumbnail file path
+
+### Performance Improvements
+- ⚡ **Route Deletion**: From minutes to seconds for routes with many segments
+- ⚡ **Segment Scanning**: Cache-based instant loading on second scan
+- ⚡ **Thumbnail Generation**: Auto-generated during import with PyAV
+
+### Migration
+**For existing databases**, delete and recreate `oplog.db`:
+```bash
+# Backup your data if needed, then:
+# Delete old database and reimport signal definitions
+```
+
+Or manually add columns:
+```sql
+ALTER TABLE segments ADD COLUMN gps_timestamp BIGINT;
+ALTER TABLE segments ADD COLUMN thumbnail_path TEXT;
+```
+
+### Full Details
+See [CHANGELOG_2025-11-08.md](CHANGELOG_2025-11-08.md) for complete technical details.
+
+---
+
+## v1.0.0 - Initial Release
 
 **Compatibility**: Tested with openpilot 0.9.7 and forks (FrogPilot, comma, custom builds, etc.)
 **Note**: openpilot 0.10+ untested - rlog format may have changed

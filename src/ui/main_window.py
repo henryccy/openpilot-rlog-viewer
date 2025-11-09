@@ -1607,8 +1607,8 @@ Press F1 to view user manual
             return
 
         # Create progress dialog
-        progress_dialog = ImportProgressDialog(self, title="載入 Segment", translation_manager=self.translation_manager)
-        progress_dialog.set_status("準備載入...")
+        progress_dialog = ImportProgressDialog(self, title=self.translation_manager.t("Load Segment"), translation_manager=self.translation_manager)
+        progress_dialog.set_status(self.translation_manager.t("Preparing to load..."))
         progress_dialog.set_progress(0)
         progress_dialog.enable_logging()  # Enable logging capture
         progress_dialog.show()
@@ -1620,7 +1620,7 @@ Press F1 to view user manual
         try:
 
             # Clear previous selection and data
-            progress_dialog.set_status("清空之前的資料...")
+            progress_dialog.set_status(self.translation_manager.t("Clearing previous data..."))
             progress_dialog.set_progress(5)
             QApplication.processEvents()  # Ensure status update is displayed
 
@@ -1630,28 +1630,28 @@ Press F1 to view user manual
             self.can_chart_widget.set_signals([], {})  # Clear chart
 
             # Load video (automatically select first available camera)
-            progress_dialog.set_status("載入影片...")
+            progress_dialog.set_status(self.translation_manager.t("Loading video..."))
             progress_dialog.set_progress(20)
             QApplication.processEvents()  # Ensure status update is displayed (before loading video)
 
             self.video_player.load_segment(self.db_manager, segment_id)
 
             # Load signal data
-            progress_dialog.set_status("載入訊號資料...")
+            progress_dialog.set_status(self.translation_manager.t("Loading signal data..."))
             progress_dialog.set_progress(40)
             QApplication.processEvents()
 
             self.signal_selector.load_segment(self.db_manager, segment_id)
 
             # Set segment for data table and charts
-            progress_dialog.set_status("設置資料表...")
+            progress_dialog.set_status(self.translation_manager.t("Setting up data table..."))
             progress_dialog.set_progress(60)
             QApplication.processEvents()
 
             self.data_table.set_database_manager(self.db_manager)
             self.data_table.set_segment(segment_id)
 
-            progress_dialog.set_status("設置圖表...")
+            progress_dialog.set_status(self.translation_manager.t("Setting up charts..."))
             progress_dialog.set_progress(80)
             QApplication.processEvents()
 
@@ -1662,11 +1662,11 @@ Press F1 to view user manual
 
             progress_dialog.set_progress(100)
             QApplication.processEvents()
-            progress_dialog.set_complete("載入完成")
+            progress_dialog.set_complete(self.translation_manager.t("Load completed"))
 
         except Exception as e:
             logger.error(f"Load failed: {e}")
-            progress_dialog.set_complete("Load failed")
+            progress_dialog.set_complete(self.translation_manager.t("Load failed"))
             QMessageBox.critical(self, "Error", f"Failed to load Segment: {e}")
 
         finally:

@@ -8,7 +8,7 @@ from PyQt6.QtWidgets import (
     QSplitter, QWidget, QFileDialog, QApplication
 )
 from PyQt6.QtCore import Qt, pyqtSignal
-from PyQt6.QtGui import QColor
+from PyQt6.QtGui import QColor, QPixmap
 from typing import Optional, Dict, List
 from pathlib import Path
 import logging
@@ -133,9 +133,9 @@ class RouteManagerDialog(QDialog):
 
         # Segment table
         self.segment_table = QTableWidget()
-        self.segment_table.setColumnCount(5)
+        self.segment_table.setColumnCount(6)
         self.segment_table.setHorizontalHeaderLabels([
-            t("Segment"), t("Start Time"), "End Time", t("Duration"), t("Events")
+            t("Preview"), t("Segment"), t("Start Time"), "End Time", t("Duration"), t("Events")
         ])
         self.segment_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.segment_table.setSelectionMode(QTableWidget.SelectionMode.ExtendedSelection)  # Multi-select enabled
@@ -149,11 +149,13 @@ class RouteManagerDialog(QDialog):
             }
         """)
 
-        self.segment_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
-        self.segment_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
+        self.segment_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)  # Preview fixed width
+        self.segment_table.setColumnWidth(0, 160)  # Preview width 160px
+        self.segment_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
         self.segment_table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
-        self.segment_table.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents)
+        self.segment_table.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeMode.Stretch)
         self.segment_table.horizontalHeader().setSectionResizeMode(4, QHeaderView.ResizeMode.ResizeToContents)
+        self.segment_table.horizontalHeader().setSectionResizeMode(5, QHeaderView.ResizeMode.ResizeToContents)
 
         # Enable sorting
         self.segment_table.setSortingEnabled(True)
@@ -215,6 +217,7 @@ class RouteManagerDialog(QDialog):
             routes = self.db_manager.get_routes_with_time()
 
             self.route_table.setRowCount(len(routes))
+            self.route_table.clearSelection()  # Clear selection state
 
             for i, route in enumerate(routes):
                 # Route ID
@@ -331,10 +334,29 @@ class RouteManagerDialog(QDialog):
             self.segment_table.setRowCount(len(segments))
 
             for i, seg in enumerate(segments):
+                # Preview image
+                thumbnail_path = seg.get('thumbnail_path')
+                if thumbnail_path and os.path.exists(thumbnail_path):
+                    pixmap = QPixmap(thumbnail_path)
+                    if not pixmap.isNull():
+                        # Scale to fit size (keep aspect ratio)
+                        scaled_pixmap = pixmap.scaled(150, 90, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+                        # Create QLabel to display image
+                        thumbnail_label = QLabel()
+                        thumbnail_label.setPixmap(scaled_pixmap)
+                        thumbnail_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                        # Set row height
+                        self.segment_table.setRowHeight(i, 100)
+                        self.segment_table.setCellWidget(i, 0, thumbnail_label)
+                    else:
+                        self.segment_table.setItem(i, 0, QTableWidgetItem(""))
+                else:
+                    self.segment_table.setItem(i, 0, QTableWidgetItem(""))
+
                 # Segment number
                 seg_item = QTableWidgetItem(str(seg['segment_num']))
                 seg_item.setData(Qt.ItemDataRole.UserRole, seg['segment_id'])  # Store segment_id
-                self.segment_table.setItem(i, 0, seg_item)
+                self.segment_table.setItem(i, 1, seg_item)
 
                 # Start time (SQLite returns string, PostgreSQL returns datetime object)
                 start_time_raw = seg['start_time']
@@ -345,7 +367,7 @@ class RouteManagerDialog(QDialog):
                         start_time = start_time_raw.strftime("%Y-%m-%d %H:%M:%S")
                 else:
                     start_time = "N/A"
-                self.segment_table.setItem(i, 1, QTableWidgetItem(start_time))
+                self.segment_table.setItem(i, 2, QTableWidgetItem(start_time))
 
                 # End time (SQLite returns string, PostgreSQL returns datetime object)
                 end_time_raw = seg['end_time']
@@ -356,15 +378,15 @@ class RouteManagerDialog(QDialog):
                         end_time = end_time_raw.strftime("%Y-%m-%d %H:%M:%S")
                 else:
                     end_time = "N/A"
-                self.segment_table.setItem(i, 2, QTableWidgetItem(end_time))
+                self.segment_table.setItem(i, 3, QTableWidgetItem(end_time))
 
                 # Duration
                 duration = f"{seg['duration_sec']:.1f}"
-                self.segment_table.setItem(i, 3, QTableWidgetItem(duration))
+                self.segment_table.setItem(i, 4, QTableWidgetItem(duration))
 
                 # Event count
                 total_events = seg['total_events'] if seg['total_events'] else 0
-                self.segment_table.setItem(i, 4, QTableWidgetItem(f"{total_events:,}"))
+                self.segment_table.setItem(i, 5, QTableWidgetItem(f"{total_events:,}"))
 
             # Re-enable sorting and set default sort (ascending by start time)
             self.segment_table.setSortingEnabled(True)
@@ -394,9 +416,11 @@ class RouteManagerDialog(QDialog):
 
         # Use new Segment selector dialog (shows GPS time)
         from .segment_selector_dialog import SegmentSelectorDialog
+        from PyQt6.QtCore import QSettings
 
-        # Get default scan directory
-        default_dir = str(Path.cwd() / "raw")
+        # Get default scan directory (read from last used, or use "raw" as default)
+        settings = QSettings("openpilot", "LogViewer")
+        default_dir = settings.value("import/last_directory", str(Path.cwd() / "raw"))
 
         selector_dialog = SegmentSelectorDialog(self, default_dir=default_dir, db_manager=self.db_manager, translation_manager=self.translation_manager)
 
@@ -703,6 +727,7 @@ class RouteManagerDialog(QDialog):
 
             # Reload Route list
             self.selected_route_id = None
+            self.segment_table.setRowCount(0)  # Clear segment table
             self.load_routes()
 
             progress_dialog.set_progress(100)
@@ -729,8 +754,8 @@ class RouteManagerDialog(QDialog):
             return
 
         row = list(selected_rows)[0]
-        segment_id = self.segment_table.item(row, 0).data(Qt.ItemDataRole.UserRole)
-        segment_num = int(self.segment_table.item(row, 0).text())
+        segment_id = self.segment_table.item(row, 1).data(Qt.ItemDataRole.UserRole)
+        segment_num = int(self.segment_table.item(row, 1).text())
 
         logger.info(f"Loading: Route={self.selected_route_id}, Segment={segment_num}")
 

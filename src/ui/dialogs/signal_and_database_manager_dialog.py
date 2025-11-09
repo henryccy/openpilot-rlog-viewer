@@ -889,12 +889,20 @@ class SignalAndDatabaseManagerDialog(QDialog):
 
             # Import unit definitions
             try:
-                sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..', 'tools'))
+                # 支援 PyInstaller 打包環境
+                if getattr(sys, 'frozen', False):
+                    # 如果是 PyInstaller 打包的執行檔
+                    tools_path = os.path.join(sys._MEIPASS, 'tools')
+                else:
+                    # 開發環境
+                    tools_path = os.path.join(os.path.dirname(__file__), '..', '..', '..', 'tools')
+
+                sys.path.insert(0, tools_path)
                 from extract_cereal_units import CEREAL_SIGNAL_UNITS, UNIT_CN_MAP
-            except:
+            except Exception as e:
                 CEREAL_SIGNAL_UNITS = {}
                 UNIT_CN_MAP = {}
-                self.cereal_status_text.append("⚠ Cannot load unit definition file, unit information will not be included")
+                self.cereal_status_text.append(f"⚠ Cannot load unit definition file: {e}")
 
             # Define basic translations
             cereal_translations = {

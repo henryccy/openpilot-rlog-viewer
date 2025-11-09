@@ -10,6 +10,8 @@ from pathlib import Path
 from typing import Callable, Optional, Dict, List
 import logging
 from cantools.database.namedsignalvalue import NamedSignalValue
+import av
+from PIL import Image
 
 logger = logging.getLogger(__name__)
 
@@ -57,6 +59,44 @@ class SegmentImporter:
         """Update progress"""
         if self.progress_callback:
             self.progress_callback(value)
+
+    def generate_thumbnail(self, video_path: str, output_path: str, width: int = 320, height: int = 180) -> bool:
+        """
+        Generate preview thumbnail from video
+
+        Args:
+            video_path: Video file path
+            output_path: Output thumbnail path
+            width: Thumbnail width
+            height: Thumbnail height
+
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            # Open video file
+            container = av.open(video_path)
+
+            # Get first video frame
+            for frame in container.decode(video=0):
+                # Convert to PIL Image
+                img = frame.to_image()
+
+                # Resize
+                img.thumbnail((width, height), Image.Resampling.LANCZOS)
+
+                # Save thumbnail
+                img.save(output_path, 'JPEG', quality=85)
+
+                container.close()
+                return True
+
+            container.close()
+            return False
+
+        except Exception as e:
+            logger.warning(f"Failed to generate thumbnail from {video_path}: {e}")
+            return False
 
     def parse_segment_path(self, rlog_path: str):
         """
@@ -438,26 +478,26 @@ class SegmentImporter:
             if current_gps_timestamp:
                 # Case 1: Current segment has correct GPS time
                 timestamp = current_gps_timestamp
-                self._log(f"使用當前 segment 的 GPS 時間: {timestamp}")
+                self._log(t("Using current segment GPS time: {0}").format(timestamp))
 
                 # If database doesn't have route start_timestamp yet, calculate from current GPS and update
                 if not route_start_time_from_db:
                     route_start_time_to_save = timestamp - (segment_num * 60)
-                    self._log(f"反推 route 起始時間: {timestamp} - ({segment_num} × 60) = {route_start_time_to_save}")
-                    self._log(f"將更新資料庫中的 route start_timestamp")
+                    self._log(t("Calculated route start time: {0} - ({1} × 60) = {2}").format(timestamp, segment_num, route_start_time_to_save))
+                    self._log(t("Will update route start_timestamp in database"))
 
             else:
                 # Case 2: Current segment doesn't have GPS time
-                self._log("⚠ 當前 segment 沒有 GPS 時間")
+                self._log(t("⚠ Current segment does not have GPS time"))
 
                 if route_start_time_from_db:
                     # Case 2a: Database has route start_timestamp, calculate directly
                     timestamp = route_start_time_from_db + (segment_num * 60)
-                    self._log(f"✓ 使用資料庫中的 route 起始時間計算: {route_start_time_from_db} + ({segment_num} × 60) = {timestamp}")
+                    self._log(t("✓ Calculated from route start time in database: {0} + ({1} × 60) = {2}").format(route_start_time_from_db, segment_num, timestamp))
 
                 else:
                     # Case 2b: Database doesn't have it either, need to scan entire route
-                    self._log("資料庫中沒有 route 起始時間，掃描整個 route...")
+                    self._log(t("No route start time in database, scanning entire route..."))
                     route_parent_dir = os.path.dirname(segment_dir)
                     route_start_time_scanned = self.get_route_start_time(route_parent_dir, route_id)
 
@@ -465,34 +505,55 @@ class SegmentImporter:
                         # Successfully calculated route start time
                         route_start_time_to_save = route_start_time_scanned
                         timestamp = route_start_time_scanned + (segment_num * 60)
-                        self._log(f"✓ 使用推算時間: {route_start_time_scanned} + ({segment_num} × 60) = {timestamp}")
+                        self._log(t("✓ Using calculated time: {0} + ({1} × 60) = {2}").format(route_start_time_scanned, segment_num, timestamp))
 
                     else:
                         # Fallback: Use alternative method
-                        self._log("⚠ 無法從 route 推算時間，使用 fallback 方法")
+                        self._log(t("⚠ Unable to calculate time from route, using fallback method"))
                         if wall_time_offset > 0:
                             wall_time_s = wall_time_offset / 1e9
                             timestamp = int(wall_time_s)
-                            self._log(f"使用 wallTimeNanos: {timestamp}")
+                            self._log(t("Using wallTimeNanos: {0}").format(timestamp))
                         else:
-                            self._log(f"警告：使用目錄名稱的 timestamp（可能不準確）")
+                            self._log(t("Warning: Using timestamp from directory name (may be inaccurate)"))
 
             # Time range
             start_time_ns = events[0].logMonoTime if events else 0
             end_time_ns = events[-1].logMonoTime if events else 0
             duration_sec = (end_time_ns - start_time_ns) / 1e9
-            self._log(f"時長: {duration_sec:.2f} 秒")
+            self._log(t("Duration: {0:.2f} seconds").format(duration_sec))
 
             self._progress(30)
 
             # Insert route (including start_timestamp and dbc_file)
-            self._log("插入 Route...")
+            self._log(t("Inserting Route..."))
             # Get DBC file name (filename only, without path)
             dbc_file_name = os.path.basename(dbc_path) if dbc_path else None
             self.db_manager.insert_route(route_id, dongle_id, timestamp, start_timestamp=route_start_time_to_save, dbc_file=dbc_file_name)
 
+            # Generate video thumbnail
+            thumbnail_path = None
+            if os.path.exists(fcamera_path):
+                thumbnail_filename = f"thumbnail_{segment_num}.jpg"
+                thumbnail_path = os.path.join(segment_dir, thumbnail_filename)
+                self._log(t("Generating video thumbnail..."))
+                if self.generate_thumbnail(fcamera_path, thumbnail_path):
+                    self._log(t("✓ Thumbnail generated: {0}").format(thumbnail_filename))
+                    thumbnail_path = os.path.abspath(thumbnail_path)
+                else:
+                    thumbnail_path = None
+            elif os.path.exists(ecamera_path):
+                thumbnail_filename = f"thumbnail_{segment_num}.jpg"
+                thumbnail_path = os.path.join(segment_dir, thumbnail_filename)
+                self._log(t("Generating video thumbnail..."))
+                if self.generate_thumbnail(ecamera_path, thumbnail_path):
+                    self._log(t("✓ Thumbnail generated: {0}").format(thumbnail_filename))
+                    thumbnail_path = os.path.abspath(thumbnail_path)
+                else:
+                    thumbnail_path = None
+
             # Insert segment
-            self._log("插入 Segment...")
+            self._log(t("Inserting Segment..."))
             segment_id = self.db_manager.insert_segment(
                 route_id=route_id,
                 segment_num=segment_num,
@@ -504,14 +565,21 @@ class SegmentImporter:
                 rlog_path=os.path.abspath(rlog_path),
                 ecamera_path=os.path.abspath(ecamera_path) if os.path.exists(ecamera_path) else None,
                 fcamera_path=os.path.abspath(fcamera_path) if os.path.exists(fcamera_path) else None,
-                qcamera_path=os.path.abspath(qcamera_path) if os.path.exists(qcamera_path) else None
+                qcamera_path=os.path.abspath(qcamera_path) if os.path.exists(qcamera_path) else None,
+                gps_timestamp=current_gps_timestamp,  # Store segment's own GPS time (if available)
+                thumbnail_path=thumbnail_path  # Store thumbnail path
             )
-            self._log(f"Segment ID: {segment_id}")
+
+            # Check if segment_id is valid
+            if segment_id is None:
+                raise Exception("Failed to insert segment: segment_id is None")
+
+            self._log(t("Segment ID: {0}").format(segment_id))
 
             self._progress(40)
 
             # Optimize SQLite performance settings
-            self._log("優化資料庫性能設置...")
+            self._log(t("Optimizing database performance settings..."))
             cursor_perf = self.db_manager.conn.cursor()
             cursor_perf.execute("PRAGMA synchronous = OFF")  # Disable synchronous writes
             cursor_perf.execute("PRAGMA journal_mode = MEMORY")  # Use memory journal
@@ -683,17 +751,17 @@ class SegmentImporter:
 
                     # Batch insert (significantly increased batch size for better performance)
                     if len(timeseries_batch) >= 50000:
-                        self._log(f"批次插入 {len(timeseries_batch):,} 筆時序資料...")
+                        self._log(t("Batch inserting {0:,} timeseries data points...").format(len(timeseries_batch)))
                         self.db_manager.insert_timeseries_batch(segment_id, timeseries_batch)
                         timeseries_batch = []
 
                     if len(can_batch) >= 50000:
-                        self._log(f"批次插入 {len(can_batch):,} 筆 CAN 訊息...")
+                        self._log(t("Batch inserting {0:,} CAN messages...").format(len(can_batch)))
                         self.db_manager.insert_can_batch(segment_id, can_batch)
                         can_batch = []
 
                     if len(log_batch) >= 5000:
-                        self._log(f"批次插入 {len(log_batch):,} 筆日誌訊息...")
+                        self._log(t("Batch inserting {0:,} log messages...").format(len(log_batch)))
                         self.db_manager.insert_log_messages_batch(log_batch)
                         log_batch = []
 
@@ -701,18 +769,18 @@ class SegmentImporter:
                     logger.error(f"Error processing event {i}: {e}")
 
             # Insert remaining data
-            self._log("插入剩餘資料...")
+            self._log(t("Inserting remaining data..."))
             if timeseries_batch:
-                self._log(f"批次插入 {len(timeseries_batch):,} 筆時序資料...")
+                self._log(t("Batch inserting {0:,} timeseries data points...").format(len(timeseries_batch)))
                 self.db_manager.insert_timeseries_batch(segment_id, timeseries_batch)
             if can_batch:
-                self._log(f"批次插入 {len(can_batch):,} 筆 CAN 訊息...")
+                self._log(t("Batch inserting {0:,} CAN messages...").format(len(can_batch)))
                 self.db_manager.insert_can_batch(segment_id, can_batch)
             if log_batch:
-                self._log(f"批次插入 {len(log_batch):,} 筆日誌訊息...")
+                self._log(t("Batch inserting {0:,} log messages...").format(len(log_batch)))
                 self.db_manager.insert_log_messages_batch(log_batch)
             if video_timestamps_batch:
-                self._log(f"批次插入 {len(video_timestamps_batch):,} 筆影片幀時間戳記...")
+                self._log(t("Batch inserting {0:,} video frame timestamps...").format(len(video_timestamps_batch)))
                 self.db_manager.insert_video_timestamps_batch(video_timestamps_batch)
 
             # Commit all data at once
@@ -729,30 +797,30 @@ class SegmentImporter:
 
             # Output statistics
             self._log("=" * 60)
-            self._log("事件類型統計：")
+            self._log(t("Event Type Statistics:"))
             for msg_type, count in sorted(event_type_counts.items(), key=lambda x: x[1], reverse=True)[:20]:
-                self._log(f"  {msg_type}: {count:,} 次")
+                self._log(f"  {msg_type}: {count:,}")
 
             if cereal_field_counts:
                 self._log("=" * 60)
-                self._log("Cereal 訊號欄位提取統計：")
+                self._log(t("Cereal Signal Field Extraction Statistics:"))
                 for msg_type, field_count in sorted(cereal_field_counts.items()):
-                    self._log(f"  {msg_type}: {field_count:,} 個欄位")
+                    self._log(f"  {msg_type}: {field_count:,}")
             else:
                 self._log("=" * 60)
-                self._log("警告：沒有提取到任何 Cereal 訊號欄位！")
-                self._log(f"載入的訊號類型數量: {len(CEREAL_TYPES_TO_EXTRACT)}")
+                self._log(t("Warning: No Cereal signal fields extracted!"))
+                self._log(t("Loaded signal types count: {0}").format(len(CEREAL_TYPES_TO_EXTRACT)))
                 # Check which types appear in rlog
                 found_types = [t for t in CEREAL_TYPES_TO_EXTRACT if t in event_type_counts]
-                self._log(f"在 rlog 中找到的訊號類型: {len(found_types)}/{len(CEREAL_TYPES_TO_EXTRACT)}")
+                self._log(t("Signal types found in rlog: {0}/{1}").format(len(found_types), len(CEREAL_TYPES_TO_EXTRACT)))
                 if found_types:
-                    self._log(f"找到的類型: {', '.join(found_types[:10])}")
+                    self._log(t("Found types: {0}").format(', '.join(found_types[:10])))
 
             if video_frame_counts:
                 self._log("=" * 60)
-                self._log("影片幀時間戳記統計：")
+                self._log(t("Video Frame Timestamp Statistics:"))
                 for camera, frame_count in sorted(video_frame_counts.items()):
-                    self._log(f"  {camera}: {frame_count:,} 幀")
+                    self._log(t("  {0}: {1:,} frames").format(camera, frame_count))
 
             self._log("=" * 60)
 
@@ -760,7 +828,7 @@ class SegmentImporter:
             # Signal definitions already exist in cereal_signal_definitions and can_signal_definitions tables
 
             # Update segment's actual time range (query from timeseries_data)
-            self._log("更新 Segment 時間範圍...")
+            self._log(t("Updating Segment time range..."))
             try:
                 cursor = self.db_manager.conn.cursor()
                 cursor.execute("""
@@ -780,7 +848,7 @@ class SegmentImporter:
                             duration_seconds = ?
                         WHERE segment_id = ?
                     """, (actual_start, actual_end, actual_duration, segment_id))
-                    self._log(f"已更新時間範圍: {actual_duration:.2f} 秒")
+                    self._log(t("Updated time range: {0:.2f} seconds").format(actual_duration))
                 cursor.close()
             except Exception as e:
                 logger.warning(f"Failed to update segment time range: {e}")
@@ -788,7 +856,7 @@ class SegmentImporter:
             self.db_manager.conn.commit()
 
             # Restore normal database settings
-            self._log("恢復資料庫設置...")
+            self._log(t("Restoring database settings..."))
             cursor_restore = self.db_manager.conn.cursor()
             cursor_restore.execute("PRAGMA synchronous = NORMAL")
             cursor_restore.execute("PRAGMA journal_mode = WAL")
