@@ -24,8 +24,16 @@ class TranslationManager:
     def __init__(self):
         self.current_language = 'en_US'
         self.translations = {}  # 翻譯字典
-        # i18n 目錄路徑
-        self.i18n_dir = Path(__file__).parent.parent.parent / 'i18n'
+
+        # i18n 目錄路徑 - 支援開發模式和編譯後的 EXE
+        import sys
+        if getattr(sys, 'frozen', False):
+            # 編譯後的 EXE：i18n 在 exe 同級目錄
+            exe_dir = Path(sys.executable).parent
+            self.i18n_dir = exe_dir / 'i18n'
+        else:
+            # 開發模式：從當前檔案路徑計算
+            self.i18n_dir = Path(__file__).parent.parent.parent / 'i18n'
 
         # 確保目錄存在
         self.i18n_dir.mkdir(exist_ok=True)
