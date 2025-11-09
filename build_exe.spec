@@ -57,6 +57,11 @@ a = Analysis(
         'av.video',
         'av.container',
 
+        # PIL/Pillow 相關（縮圖生成需要）
+        'PIL',
+        'PIL.Image',
+        'PIL.ImageFile',
+
         # opencv 相關
         'cv2',
 
